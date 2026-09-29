@@ -30,6 +30,14 @@ public class DependencyRulesTests
         "Binance", "Npgsql", "EntityFrameworkCore", "Microsoft.ML", "OnnxRuntime",
     ];
 
+    // Canonical pipeline order (CLAUDE.md §3). A stage may depend on earlier
+    // stages, never on later ones: market data cannot know about strategy,
+    // and nothing upstream of Risk can reach Execution.
+    private static readonly string[] PipelineOrder =
+    [
+        "Omega.MarketData", "Omega.Features", "Omega.Strategy", "Omega.Risk", "Omega.Execution",
+    ];
+
     private readonly SolutionProjects _solution = SolutionProjects.Load();
 
     [Fact]
@@ -72,6 +80,18 @@ public class DependencyRulesTests
             .SelectMany(module => _solution[module].ProjectReferences
                 .Where(reference => forbidden.Contains(reference))
                 .Select(reference => $"{module} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Pipeline_stages_do_not_reference_later_stages()
+    {
+        var violations = PipelineOrder
+            .SelectMany((stage, index) => _solution[stage].ProjectReferences
+                .Where(reference => Array.IndexOf(PipelineOrder, reference) > index)
+                .Select(reference => $"{stage} -> {reference}"))
             .ToList();
 
         Assert.Empty(violations);

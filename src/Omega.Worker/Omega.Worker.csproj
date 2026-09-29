@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <!-- Local development secrets (never committed). Not used in Phase 0. -->
+    <!-- Local development secrets (never committed). Not used yet: market-data streams are public. -->
     <UserSecretsId>dotnet-Omega.Worker-a706b05a-3c41-41ee-a65b-c1df964f822f</UserSecretsId>
   </PropertyGroup>
 
@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+    <ProjectReference Include="..\Omega.MarketData\Omega.MarketData.csproj" />
   </ItemGroup>
 
 </Project>

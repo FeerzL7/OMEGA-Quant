@@ -14,8 +14,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | Fase | Nombre                              | Estado        |
 |------|-------------------------------------|---------------|
 | 0    | Architecture and Repository         | **Completada** |
-| 1    | Binance Market Data                 | Siguiente     |
-| 2    | Persistence                         | Pendiente     |
+| 1    | Binance Market Data                 | **Completada** |
+| 2    | Persistence                         | Siguiente     |
 | 3    | Market State and Candle Engine      | Pendiente     |
 | 4    | Feature Engine                      | Pendiente     |
 | 5    | Backtester                          | Pendiente     |
@@ -37,8 +37,15 @@ siguiente sin instrucción del propietario.
 ### Notas de la Fase 0
 
 * Resultado en detalle: ver el reporte de la fase y [`DECISION_LOG.md`](DECISION_LOG.md).
-* Cuestión abierta que conviene resolver antes de la Fase 5 o la 12: ubicación de la capa de aplicación
-  (P-001 en [`ARCHITECTURE.md`](ARCHITECTURE.md)).
+* P-001 (capa de aplicación) quedó resuelta en la Fase 1 (D-015).
+
+### Notas de la Fase 1
+
+* Diseño y decisiones: [ADR-003](decisions/ADR-003-binance.md).
+* Limitaciones conocidas: sin persistencia ni relleno de huecos (Fases 2-3); sin detección de huecos previos al
+  arranque; la conexión real se verifica manualmente, no en los tests.
+* Para la Fase 2: la persistencia de velas es el punto natural para crear `Omega.Application` (D-015) y para
+  reconciliar huecos contra el histórico.
 
 ---
 
