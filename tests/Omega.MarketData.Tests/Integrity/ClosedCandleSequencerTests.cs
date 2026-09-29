@@ -56,6 +56,18 @@ public class ClosedCandleSequencerTests
         Assert.Equal(CandleSequenceOutcome.Accepted, sequencer.Accept(Candle(5)).Outcome);
     }
 
+    [Fact]
+    public void Seeded_sequencer_detects_duplicates_and_gaps_against_the_seed()
+    {
+        var sequencer = new ClosedCandleSequencer(CandleInterval.FiveMinutes, lastKnownOpenTimeUtc: Start.AddMinutes(5));
+
+        Assert.Equal(CandleSequenceOutcome.Duplicate, sequencer.Accept(Candle(1)).Outcome);
+
+        var result = sequencer.Accept(Candle(3));
+        Assert.Equal(CandleSequenceOutcome.AcceptedAfterGap, result.Outcome);
+        Assert.Equal(1, result.MissingCandles);
+    }
+
     private static Candle Candle(int index)
     {
         var open = Start.AddMinutes(5 * index);

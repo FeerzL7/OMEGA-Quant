@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Omega.Application\Omega.Application.csproj" />
+  </ItemGroup>
+
+</Project>

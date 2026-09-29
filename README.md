@@ -11,14 +11,21 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
-**Fase 1 — Datos de mercado de Binance.** El Worker recibe en tiempo real las velas **cerradas** de BTCUSDT 5m
-desde Binance Spot (solo datos públicos de mercado), con reconexión, detección de duplicados y huecos, y logs
-estructurados. No hay base de datos, estrategia, riesgo, ML ni ejecución. Ver [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
+**Fase 2 — Persistencia.** El Worker recibe en tiempo real las velas **cerradas** de BTCUSDT 5m desde Binance
+Spot (solo datos públicos de mercado) y las guarda en PostgreSQL junto con los eventos de sistema (conexiones,
+huecos, conflictos). Al reiniciar continúa desde la última vela guardada y registra lo que falte. No hay
+estrategia, riesgo, ML ni ejecución. Ver [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
 ## Requisitos
 
 * .NET SDK 10.0.100 o superior dentro de la banda 10.0.x (fijado en `global.json`, `rollForward: latestFeature`).
 * Acceso a nuget.org para restaurar paquetes.
+* PostgreSQL 17 (o compatible) para el Worker y para los tests de persistencia. La forma más simple es Docker:
+
+```bash
+cp docker/.env.example docker/.env          # edita la contraseña
+docker compose -f docker/docker-compose.yml up -d
+```
 
 ## Comandos
 
@@ -26,6 +33,18 @@ estructurados. No hay base de datos, estrategia, riesgo, ML ni ejecución. Ver [
 dotnet restore
 dotnet build
 dotnet test
+```
+
+Los tests de persistencia usan un PostgreSQL real (cada test crea y borra su propia base temporal). Sin la
+variable `OMEGA_TEST_POSTGRES` aparecen como **omitidos**. Para ejecutarlos (PowerShell / bash):
+
+```powershell
+$env:OMEGA_TEST_POSTGRES = "Host=localhost;Port=5432;Database=postgres;Username=omega;Password=<tu contraseña>"
+dotnet test
+```
+
+```bash
+OMEGA_TEST_POSTGRES="Host=localhost;Port=5432;Database=postgres;Username=omega;Password=<tu contraseña>" dotnet test
 ```
 
 Ejecutar los hosts (perfil `http` de `launchSettings.json`):
@@ -41,15 +60,26 @@ Endpoints actuales de la API:
 * `GET /health`: liveness del proceso. No verifica Binance, base de datos ni modelos (no existen todavía).
 * `GET /api/system/status`: servicio, modo de trading configurado y hora UTC del servidor.
 
-### Verificar el stream en vivo
+### Ejecutar el Worker (ingesta en vivo)
+
+Una sola vez, guarda la cadena de conexión como secreto de desarrollo (nunca en `appsettings`):
 
 ```bash
+dotnet user-secrets set "Database:ConnectionString" "Host=localhost;Port=5432;Database=omega;Username=omega;Password=<tu contraseña>" --project src/Omega.Worker
 dotnet run --project src/Omega.Worker
 ```
 
-Deberías ver `Market-data connection Connected` y, al terminar cada intervalo de 5 minutos (hora UTC),
-una línea `Candle closed BTCUSDT FiveMinutes ...` con OHLCV y la latencia desde el cierre. Las actualizaciones
-de la vela en curso no se registran. `Ctrl+C` detiene el Worker limpiamente.
+En Development el Worker aplica las migraciones al arrancar. Deberías ver `Applied migration 0001_initial_schema`
+(solo la primera vez), `Market-data connection Connected` y, al cerrar cada vela de 5 minutos (hora UTC),
+`Candle stored BTCUSDT FiveMinutes ...`. Para revisar lo guardado:
+
+```sql
+SELECT open_time, close_price, base_volume, trade_count FROM candles ORDER BY open_time DESC LIMIT 10;
+SELECT occurred_at, event_type, severity, message FROM system_events ORDER BY id DESC LIMIT 20;
+```
+
+Fuera de Development (`Database:ApplyMigrationsOnStartup=false`), si hay migraciones pendientes el Worker no
+arranca y lo indica.
 
 ## Estructura
 
@@ -76,12 +106,13 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 
 * Datos de mercado: sección `MarketData` del Worker (endpoint, símbolo, intervalo, tiempos de conexión y
   reconexión). Ver [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §8. No contiene credenciales.
+* Base de datos: sección `Database`. `ConnectionString` solo por user-secrets o `Database__ConnectionString`.
 * Modo de trading: sección `Trading`, clave `Mode` (`Backtest`, `Paper`, `Testnet`, `Live`).
   Si falta, el valor es `Backtest`. Un valor inválido impide que la API y el Worker arranquen.
   Se puede sobrescribir con variables de entorno, por ejemplo `Trading__Mode=Paper`.
 * Los secretos **nunca** se versionan. En desarrollo se usarán `dotnet user-secrets`; en otros entornos,
   variables de entorno o un gestor de secretos. `.gitignore` excluye `.env*`, `secrets.json`,
-  `appsettings.*.local.json` y certificados. Hasta la Fase 1 no existe ningún secreto: los streams de mercado son públicos.
+  `appsettings.*.local.json` y certificados. El único secreto hasta ahora es la contraseña de PostgreSQL (user-secrets, variable de entorno o `docker/.env`).
 * El navegador nunca recibirá credenciales de Binance.
 
 ## Documentación

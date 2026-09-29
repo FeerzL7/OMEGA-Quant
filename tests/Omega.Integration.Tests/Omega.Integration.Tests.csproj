@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Cross-project tests. In Phase 0 these are architecture tests that read the
-    .csproj files from disk, so this project needs no project references.
+    Cross-project tests: architecture rules (read the .csproj files) and
+    persistence tests against a real PostgreSQL (see README, OMEGA_TEST_POSTGRES).
   -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Omega.Infrastructure\Omega.Infrastructure.csproj" />
+  </ItemGroup>
 
 </Project>

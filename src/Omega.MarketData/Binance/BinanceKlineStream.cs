@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Omega.Core.MarketData;
+using Omega.Core.Resilience;
 using Omega.MarketData.Configuration;
 using Omega.MarketData.Integrity;
-using Omega.MarketData.Resilience;
 using Omega.MarketData.Transport;
 
 namespace Omega.MarketData.Binance;
@@ -28,11 +28,14 @@ namespace Omega.MarketData.Binance;
 /// </remarks>
 public sealed partial class BinanceKlineStream : IMarketDataStream
 {
+    /// <summary>Lineage recorded with every candle produced by this adapter.</summary>
+    public const string SourceName = "binance-spot-ws";
+
     private readonly MarketDataOptions _options;
     private readonly IWebSocketTransportFactory _transportFactory;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<BinanceKlineStream> _logger;
-    private readonly ReconnectBackoff _backoff;
+    private readonly ExponentialBackoff _backoff;
 
     public BinanceKlineStream(
         MarketDataOptions options,
@@ -56,7 +59,7 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
         _transportFactory = transportFactory;
         _timeProvider = timeProvider;
         _logger = logger;
-        _backoff = new ReconnectBackoff(options.ReconnectInitialDelay, options.ReconnectMaxDelay, random ?? Random.Shared);
+        _backoff = new ExponentialBackoff(options.ReconnectInitialDelay, options.ReconnectMaxDelay, random ?? Random.Shared);
 
         StreamUri = BuildStreamUri(options);
     }
@@ -65,6 +68,7 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
     public Uri StreamUri { get; }
 
     public async IAsyncEnumerable<MarketDataEvent> ReadEventsAsync(
+        DateTimeOffset? lastKnownOpenTimeUtc,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var channel = Channel.CreateUnbounded<MarketDataEvent>(new UnboundedChannelOptions
@@ -74,7 +78,7 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
         });
 
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var producer = RunAsync(channel.Writer, stop.Token);
+        var producer = RunAsync(channel.Writer, lastKnownOpenTimeUtc, stop.Token);
 
         try
         {
@@ -94,9 +98,10 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
         }
     }
 
-    private async Task RunAsync(ChannelWriter<MarketDataEvent> writer, CancellationToken cancellationToken)
+    private async Task RunAsync(
+        ChannelWriter<MarketDataEvent> writer, DateTimeOffset? lastKnownOpenTimeUtc, CancellationToken cancellationToken)
     {
-        var sequencer = new ClosedCandleSequencer(_options.Interval);
+        var sequencer = new ClosedCandleSequencer(_options.Interval, lastKnownOpenTimeUtc);
         var failedAttempts = 0;
         Exception? failure = null;
 
@@ -267,7 +272,7 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
                 break;
         }
 
-        Publish(writer, new CandleClosedEvent(candle, Now));
+        Publish(writer, new CandleClosedEvent(candle, SourceName, Now));
     }
 
     private static void Publish(ChannelWriter<MarketDataEvent> writer, MarketDataEvent marketDataEvent) =>

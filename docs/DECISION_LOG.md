@@ -24,13 +24,20 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-015  | 2026-09-28 | Capa de aplicación: nuevo proyecto `Omega.Application` (Api y Worker lo referencian), creado en la primera fase que encadene dos o más módulos. | Aceptada (delegada por el propietario) | [ARCHITECTURE §9](ARCHITECTURE.md) |
 | D-016  | 2026-09-28 | `Candle` y `CandleInterval` viven en `Omega.Core` (los consumirán Features, Strategy y Backtesting); los DTOs de Binance son `internal` en `Omega.MarketData`. | Adoptada en Fase 1 | `src/Omega.Core/MarketData` |
 | D-017  | 2026-09-28 | Regla de arquitectura: ninguna etapa del pipeline (MarketData → Features → Strategy → Risk → Execution) referencia una etapa posterior. Verificada por test. | Adoptada en Fase 1 | [ARCHITECTURE §4](ARCHITECTURE.md) |
+| D-018  | 2026-09-28 | Persistencia con Npgsql 10 y SQL explícito, sin ORM. | Aceptada (delegada por el propietario) | [ADR-002](decisions/ADR-002-postgresql.md) |
+| D-019  | 2026-09-28 | Migraciones: scripts SQL numerados y embebidos + migrador propio (lock consultivo, transacción por script, checksum SHA-256 con finales de línea normalizados). Aplicación automática solo si `Database:ApplyMigrationsOnStartup` (true solo en Development). | Aceptada (delegada por el propietario) | [ADR-002](decisions/ADR-002-postgresql.md) |
+| D-020  | 2026-09-28 | Se persisten velas cerradas (inmutables, con linaje `source`/`observed_at`) y eventos de sistema; no los mensajes crudos del stream. | Aceptada (delegada por el propietario) | [ADR-002](decisions/ADR-002-postgresql.md) |
+| D-021  | 2026-09-28 | Abstracciones de persistencia en `Omega.Core`; errores traducidos a `PersistenceException(IsTransient)`. Escrituras de velas: reintento con backoff si es transitorio, parada si no. Eventos de sistema: best effort. | Adoptada en Fase 2 | [ADR-002](decisions/ADR-002-postgresql.md) |
+| D-022  | 2026-09-28 | La ingesta reanuda desde la última vela persistida; los huecos entre reinicios se detectan y registran. El relleno de huecos (REST histórico) queda pendiente. | Adoptada en Fase 2 | [ADR-002](decisions/ADR-002-postgresql.md) |
+| D-023  | 2026-09-28 | PostgreSQL de desarrollo con `docker compose` (imagen `postgres:17`, puerto solo en 127.0.0.1, contraseña en `docker/.env` ignorado por git). Tests de persistencia contra PostgreSQL real, omitidos si no se define `OMEGA_TEST_POSTGRES`. | Adoptada en Fase 2 | [README](../README.md) |
+| D-024  | 2026-09-28 | `ReconnectBackoff` pasa a `Omega.Core.Resilience.ExponentialBackoff`, compartido por reconexión y reintentos de escritura. | Adoptada en Fase 2 | `src/Omega.Core/Resilience` |
 
 ## ADRs
 
 | ADR | Tema | Estado |
 |-----|------|--------|
 | ADR-001 | .NET | No redactado (ver D-001) |
-| ADR-002 | PostgreSQL | No redactado (Fase 2) |
+| [ADR-002](decisions/ADR-002-postgresql.md) | Persistencia en PostgreSQL | Aceptado |
 | [ADR-003](decisions/ADR-003-binance.md) | Datos de mercado de Binance Spot | Aceptado |
 | ADR-004 | ML con Python y ONNX | No redactado (Fase 7) |
 | ADR-005 | Backtesting | No redactado (Fase 5) |

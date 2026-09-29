@@ -1,6 +1,6 @@
 # Arquitectura de OMEGA Quant
 
-Estado: Fase 1 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
+Estado: Fase 2 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
 en las fases siguientes. Las decisiones mayores están en [`decisions/`](decisions/) y en
 [`DECISION_LOG.md`](DECISION_LOG.md).
 
@@ -24,17 +24,18 @@ atraviesa por fuera.**
 
 | Proyecto               | Tipo                | Responsabilidad                                                                 | Contenido actual |
 |------------------------|---------------------|----------------------------------------------------------------------------------|---------------------|
-| `Omega.Core`           | Librería            | Entidades, value objects, enums, contratos y reglas de dominio fundamentales.     | `TradingMode`, `SignalDirection`, `Result`/`Error`, `TradingOptions`, `Candle`, `CandleInterval` |
+| `Omega.Core`           | Librería            | Entidades, value objects, enums, contratos y reglas de dominio fundamentales.     | `TradingMode`, `SignalDirection`, `Result`/`Error`, `TradingOptions`, `Candle`, `CandleInterval`, `SystemEvent`, contratos de persistencia (`ICandleStore`, `ISystemEventStore`), `ExponentialBackoff` |
 | `Omega.MarketData`     | Librería            | Conexión a datos de mercado de Binance, normalización, velas, validación.        | Stream de velas cerradas Binance Spot (ADR-003) |
 | `Omega.Features`       | Librería            | Cálculo y validación de features e indicadores.                                  | Vacío |
 | `Omega.Strategy`       | Librería            | Inferencia, probabilidad, calibración, régimen, valor esperado, señales. No define tamaño de posición. | Vacío |
 | `Omega.Risk`           | Librería            | Límites, tamaño de posición, exposición, drawdown, rechazo de operaciones.       | Vacío |
 | `Omega.Execution`      | Librería            | Órdenes, ciclo de vida, proveedores de ejecución, filtros del exchange.          | Vacío |
 | `Omega.Backtesting`    | Librería            | Simulación histórica, costos, métricas, curva de equity.                         | Vacío |
-| `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Vacío |
+| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | `MarketDataIngestionService` (stream → persistencia) |
+| `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, `PostgresCandleStore`, `PostgresSystemEventStore` (ADR-002) |
 | `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status` |
 | `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel placeholder sin datos |
-| `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | `MarketDataWorker`: consume el stream y registra velas, huecos y conexión |
+| `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones al arrancar y aloja la ingesta de datos de mercado |
 
 ## 4. Reglas de dependencia
 
@@ -47,10 +48,12 @@ Omega.Strategy ───┤
 Omega.Risk ───────┤
 Omega.Execution ──┼──► Omega.Core   (sin referencias a otros proyectos ni paquetes)
 Omega.Backtesting ┤
-Omega.Infrastructure
+Omega.Infrastructure  (+ paquete Npgsql; implementa las abstracciones de Core)
 Omega.Api ────────┤
 Omega.Worker ─────┘
-Omega.Worker ──────► Omega.MarketData
+
+Omega.Application ──► Omega.MarketData, Omega.Core
+Omega.Worker ───────► Omega.Application, Omega.MarketData, Omega.Infrastructure   (raíz de composición)
 
 Omega.UI           (sin referencias a proyectos; hablará con Omega.Api por HTTP)
 ```
@@ -69,6 +72,9 @@ Reglas, todas verificadas automáticamente en `tests/Omega.Integration.Tests/Arc
 7. Todo proyecto de `src/` y `tests/` pertenece a `OMEGA.sln`.
 8. Orden del pipeline: MarketData → Features → Strategy → Risk → Execution. Una etapa puede referenciar etapas
    anteriores, nunca posteriores (por ejemplo, MarketData no puede referenciar Strategy ni Execution).
+9. `Omega.Application` no referencia Infrastructure ni hosts: trabaja contra abstracciones.
+10. `Omega.Infrastructure` no referencia Application ni hosts.
+11. Solo `Omega.Infrastructure` referencia paquetes de base de datos (Npgsql, EF Core, Dapper).
 
 Las referencias entre módulos de dominio (por ejemplo, Strategy → Features) se agregarán en la fase que las
 necesite, no antes.
@@ -113,10 +119,9 @@ CORRECTO:    UI → API → Application → Risk Engine → Decision Engine → 
   proceso). `/api/system/status` expone el modo configurado.
 * **UI**: Blazor Web App con renderizado estático en servidor (sin interactividad). El modo interactivo se
   decidirá cuando exista la primera función que lo requiera (ver ADR-006).
-* **Worker**: composición del stream de datos de mercado. `MarketDataWorker` registra el modo al iniciar,
-  consume `IMarketDataStream` y escribe logs estructurados de velas cerradas (incluida la latencia desde el
-  cierre), huecos y cambios de conexión. Se detiene limpiamente con la señal de apagado. Ninguna vela llega
-  todavía a estrategia, riesgo ni ejecución.
+* **Worker**: raíz de composición. Al arrancar verifica el esquema de la base (y aplica migraciones si
+  `Database:ApplyMigrationsOnStartup` lo permite); si no coincide con el código, termina con código 1.
+  Después aloja `MarketDataIngestionService`. Ninguna vela llega todavía a estrategia, riesgo ni ejecución.
 
 ## 7.1 Datos de mercado (Fase 1)
 
@@ -130,11 +135,30 @@ Detalle y justificación en [ADR-003](decisions/ADR-003-binance.md).
 * Lo específico de Binance (DTOs, parser, normalizador) es `internal` en `Omega.MarketData.Binance`; el resto
   del sistema solo ve `Candle` y los eventos.
 * El transporte está detrás de `IWebSocketTransport`, lo que permite probar reconexiones sin red.
+* `ReadEventsAsync` recibe la última vela conocida (la última persistida): no la repite y reporta como hueco lo
+  que falte desde ella, también entre reinicios.
+
+## 7.2 Persistencia (Fase 2)
+
+Detalle y justificación en [ADR-002](decisions/ADR-002-postgresql.md).
+
+```text
+IMarketDataStream ──► MarketDataIngestionService (Omega.Application) ──► ICandleStore / ISystemEventStore (Omega.Core)
+                                                                                   ▲ implementan
+                                                              PostgresCandleStore / PostgresSystemEventStore (Omega.Infrastructure)
+```
+
+* Tablas: `candles` (inmutables, clave `(symbol, interval_code, open_time)`, `numeric` exacto, restricciones
+  que replican las invariantes del dominio), `system_events` (append-only, `jsonb`) y `schema_migrations`.
+* Migraciones: scripts SQL numerados en `src/Omega.Infrastructure/Persistence/Migrations/Scripts`, embebidos
+  y aplicados por `DatabaseMigrator` (lock consultivo, transacción por script, checksum verificado).
+* Errores de base de datos → `PersistenceException(IsTransient)`. La ingesta reintenta las escrituras de velas
+  transitorias con backoff y se detiene ante errores no transitorios. Los eventos de sistema son best effort.
 
 ## 8. Configuración
 
 Secciones previstas por la constitución: `Omega`, `MarketData`, `Trading`, `Risk`, `Database`, `Binance`.
-Existen **`Trading`** (API y Worker) y **`MarketData`** (Worker):
+Existen **`Trading`** (API y Worker), **`MarketData`** y **`Database`** (Worker):
 
 ```json
 {
@@ -148,9 +172,16 @@ Existen **`Trading`** (API y Worker) y **`MarketData`** (Worker):
     "ReconnectInitialDelay": "00:00:01",
     "ReconnectMaxDelay": "00:01:00",
     "MaxConnectionLifetime": "23:00:00"
+  },
+  "Database": {
+    "ApplyMigrationsOnStartup": false
   }
 }
 ```
+
+* `Database:ConnectionString` **no** está en ningún `appsettings`: se define con `dotnet user-secrets` (desarrollo)
+  o con la variable de entorno `Database__ConnectionString`. `ApplyMigrationsOnStartup` es `true` solo en
+  `appsettings.Development.json`.
 
 * `TradingOptions` vive en `Omega.Core` como clase simple, sin dependencia de frameworks.
 * El valor por defecto es `Backtest` (valor 0 del enum): una configuración ausente nunca activa un modo que
@@ -165,7 +196,7 @@ Existen **`Trading`** (API y Worker) y **`MarketData`** (Worker):
 
 ## 9. Cuestiones resueltas
 
-**P-001. ¿Dónde vive la capa de aplicación?** *Resuelta en la Fase 1: opción 1 (ver D-015).* El diagrama de la constitución muestra una "Application Layer"
+**P-001. ¿Dónde vive la capa de aplicación?** *Resuelta en la Fase 1 (D-015); `Omega.Application` creado en la Fase 2.* El diagrama de la constitución muestra una "Application Layer"
 entre la API y los módulos de dominio, pero la estructura de proyectos no incluye un `Omega.Application`. Alguien
 tiene que orquestar el pipeline (datos → features → modelo → ... → ejecución) y esa orquestación la usarán tanto
 la API como el Worker. Alternativas:
@@ -175,6 +206,4 @@ la API como el Worker. Alternativas:
 3. Poner la orquestación en `Omega.Api` y que el Worker la invoque.
 
 Decisión: opción 1, porque evita duplicar la orquestación entre dos hosts y mantiene los hosts delgados.
-`Omega.Application` se creará en la primera fase que encadene dos o más módulos (probablemente la Fase 2 o 3,
-cuando el stream alimente persistencia y validación). En la Fase 1 el Worker solo consume un stream, así que
-crearlo ahora sería un proyecto vacío.
+`Omega.Application` se creó en la Fase 2, cuando la ingesta empezó a encadenar datos de mercado y persistencia.

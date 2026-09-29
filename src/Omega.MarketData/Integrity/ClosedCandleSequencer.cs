@@ -8,14 +8,15 @@ namespace Omega.MarketData.Integrity;
 /// out-of-order candles and gaps.
 /// </summary>
 /// <remarks>
-/// Without persisted history (Phase 2) the first candle after start-up cannot
-/// be checked against anything, so a gap before it is not detectable yet.
+/// When seeded with the last known candle (for example the latest persisted
+/// one), gaps across restarts are detected too. Without a seed, the first
+/// candle cannot be checked against anything.
 /// </remarks>
-public sealed class ClosedCandleSequencer(CandleInterval interval)
+public sealed class ClosedCandleSequencer(CandleInterval interval, DateTimeOffset? lastKnownOpenTimeUtc = null)
 {
     private readonly TimeSpan _intervalLength = interval.ToTimeSpan();
 
-    public DateTimeOffset? LastOpenTimeUtc { get; private set; }
+    public DateTimeOffset? LastOpenTimeUtc { get; private set; } = lastKnownOpenTimeUtc;
 
     public CandleSequenceResult Accept(Candle candle)
     {

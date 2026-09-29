@@ -34,6 +34,7 @@ ellos (en especial la 14 y la 15).
    solo `wss://`).
 3. **Huecos: detectar y reportar, no rellenar.** Un hueco genera `DataGapDetectedEvent` (integridad no
    garantizada para ese periodo). El relleno por REST se hará cuando exista persistencia (Fases 2-3).
+   *Estado tras la Fase 2: los huecos se persisten como eventos de sistema; el relleno sigue pendiente.*
 4. **Solo velas cerradas** (`x = true`) salen del adaptador. Las actualizaciones de la vela en curso se descartan.
 
 ## Diseño
@@ -83,8 +84,9 @@ un segundo cliente (REST) fuera del alcance de la fase.
 
 * No hay credenciales en esta fase: los streams de mercado son públicos. La sección `MarketData` nunca debe
   contener claves.
-* Al arrancar no se sabe si faltan velas anteriores (no hay histórico persistido); la detección de huecos
-  cubre lo ocurrido **durante** la ejecución.
+* ~~Al arrancar no se sabe si faltan velas anteriores (no hay histórico persistido); la detección de huecos
+  cubre lo ocurrido **durante** la ejecución.~~ *Actualizado en la Fase 2: el stream recibe la última vela
+  persistida y detecta también los huecos entre reinicios (ADR-002).*
 * Una vela perdida justo en una reconexión se detecta como hueco con la vela siguiente, no antes (hasta 5 min).
 * La conexión real con Binance no se prueba en CI; los tests usan un transporte simulado. La verificación en
   vivo es manual (README).

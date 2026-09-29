@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Orchestrates the pipeline stages. Depends on domain modules and on the
+    abstractions in Omega.Core; never on Omega.Infrastructure or on a host.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+    <ProjectReference Include="..\Omega.MarketData\Omega.MarketData.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -15,8 +15,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 |------|-------------------------------------|---------------|
 | 0    | Architecture and Repository         | **Completada** |
 | 1    | Binance Market Data                 | **Completada** |
-| 2    | Persistence                         | Siguiente     |
-| 3    | Market State and Candle Engine      | Pendiente     |
+| 2    | Persistence                         | **Completada** |
+| 3    | Market State and Candle Engine      | Siguiente     |
 | 4    | Feature Engine                      | Pendiente     |
 | 5    | Backtester                          | Pendiente     |
 | 6    | Baseline Strategy                   | Pendiente     |
@@ -45,7 +45,15 @@ siguiente sin instrucción del propietario.
 * Limitaciones conocidas: sin persistencia ni relleno de huecos (Fases 2-3); sin detección de huecos previos al
   arranque; la conexión real se verifica manualmente, no en los tests.
 * Para la Fase 2: la persistencia de velas es el punto natural para crear `Omega.Application` (D-015) y para
-  reconciliar huecos contra el histórico.
+  reconciliar huecos contra el histórico. *(Hecho en la Fase 2.)*
+
+### Notas de la Fase 2
+
+* Diseño y decisiones: [ADR-002](decisions/ADR-002-postgresql.md).
+* Los huecos se detectan también entre reinicios y quedan en `system_events`, pero **no se rellenan**.
+  Propuesta para decidir al iniciar la Fase 3: incluir el relleno de huecos por REST (`GET /api/v3/klines`)
+  como parte de "Candle validation" y "Data freshness", porque sin él el histórico tendrá agujeros.
+* Tests de persistencia: requieren PostgreSQL (`OMEGA_TEST_POSTGRES`); sin él se reportan como omitidos.
 
 ---
 

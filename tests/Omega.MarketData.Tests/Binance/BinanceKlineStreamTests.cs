@@ -42,6 +42,30 @@ public class BinanceKlineStreamTests
     }
 
     [Fact]
+    public async Task Resuming_skips_known_candles_and_reports_the_gap_since_the_last_known_one()
+    {
+        // The consumer already has candle 1 (for example persisted before a restart).
+        var factory = new ScriptedTransportFactory(ScriptedTransport.Sending(Kline(1), Kline(4)));
+
+        var events = await CollectAsync(CreateStream(factory), CandleCount(1), lastKnownOpenTimeUtc: OpenTime(1));
+
+        Assert.Equal([OpenTime(4)], ClosedOpenTimes(events));
+        var gap = Assert.Single(events.OfType<DataGapDetectedEvent>());
+        Assert.Equal(OpenTime(2), gap.FirstMissingOpenTimeUtc);
+        Assert.Equal(2, gap.MissingCandles);
+    }
+
+    [Fact]
+    public async Task Closed_candles_carry_their_source()
+    {
+        var factory = new ScriptedTransportFactory(ScriptedTransport.Sending(Kline(0)));
+
+        var events = await CollectAsync(CreateStream(factory), CandleCount(1));
+
+        Assert.Equal("binance-spot-ws", Assert.Single(events.OfType<CandleClosedEvent>()).Source);
+    }
+
+    [Fact]
     public async Task Reconnects_after_the_server_closes_and_discards_the_resent_candle()
     {
         var first = ScriptedTransport.SendingThenClosing(Kline(0), Kline(1));
@@ -157,7 +181,7 @@ public class BinanceKlineStreamTests
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
         var events = new List<MarketDataEvent>();
 
-        await foreach (var marketDataEvent in stream.ReadEventsAsync(cancellation.Token))
+        await foreach (var marketDataEvent in stream.ReadEventsAsync(null, cancellation.Token))
         {
             events.Add(marketDataEvent);
         }
@@ -182,12 +206,12 @@ public class BinanceKlineStreamTests
     }
 
     private static async Task<List<MarketDataEvent>> CollectAsync(
-        BinanceKlineStream stream, Func<List<MarketDataEvent>, bool> isComplete)
+        BinanceKlineStream stream, Func<List<MarketDataEvent>, bool> isComplete, DateTimeOffset? lastKnownOpenTimeUtc = null)
     {
         using var timeout = new CancellationTokenSource(TestTimeout);
         var events = new List<MarketDataEvent>();
 
-        await foreach (var marketDataEvent in stream.ReadEventsAsync(timeout.Token))
+        await foreach (var marketDataEvent in stream.ReadEventsAsync(lastKnownOpenTimeUtc, timeout.Token))
         {
             events.Add(marketDataEvent);
 

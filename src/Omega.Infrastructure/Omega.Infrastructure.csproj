@@ -1,7 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Versioned schema scripts. Resource names are stable: Omega.Migrations.<file name>. -->
+    <EmbeddedResource Include="Persistence\Migrations\Scripts\*.sql" LogicalName="Omega.Migrations.%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

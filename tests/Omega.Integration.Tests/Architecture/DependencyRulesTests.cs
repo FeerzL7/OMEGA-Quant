@@ -8,6 +8,8 @@ public class DependencyRulesTests
 {
     private const string Core = "Omega.Core";
     private const string Ui = "Omega.UI";
+    private const string Application = "Omega.Application";
+    private const string Infrastructure = "Omega.Infrastructure";
 
     private static readonly string[] Hosts = ["Omega.Api", "Omega.UI", "Omega.Worker"];
 
@@ -20,8 +22,11 @@ public class DependencyRulesTests
     private static readonly string[] ForbiddenForUi =
     [
         "Omega.MarketData", "Omega.Features", "Omega.Strategy", "Omega.Risk",
-        "Omega.Execution", "Omega.Backtesting", "Omega.Infrastructure", "Omega.Worker",
+        "Omega.Execution", "Omega.Backtesting", "Omega.Application", "Omega.Infrastructure", "Omega.Worker",
     ];
+
+    // Database drivers and ORMs: only Omega.Infrastructure may use them.
+    private static readonly string[] DatabasePackageFragments = ["Npgsql", "EntityFrameworkCore", "Dapper"];
 
     // Package name fragments that would give the UI direct access to the exchange,
     // the database or ML runtimes.
@@ -80,6 +85,40 @@ public class DependencyRulesTests
             .SelectMany(module => _solution[module].ProjectReferences
                 .Where(reference => forbidden.Contains(reference))
                 .Select(reference => $"{module} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Application_does_not_reference_infrastructure_or_hosts()
+    {
+        var forbidden = Hosts.Append(Infrastructure).ToArray();
+
+        var violations = _solution[Application].ProjectReferences.Intersect(forbidden).ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Infrastructure_does_not_reference_application_or_hosts()
+    {
+        var forbidden = Hosts.Append(Application).ToArray();
+
+        var violations = _solution[Infrastructure].ProjectReferences.Intersect(forbidden).ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Only_infrastructure_references_database_packages()
+    {
+        var violations = _solution.Projects.Values
+            .Where(project => !project.IsTestProject && project.Name != Infrastructure)
+            .SelectMany(project => project.PackageReferences
+                .Where(package => DatabasePackageFragments.Any(fragment =>
+                    package.Contains(fragment, StringComparison.OrdinalIgnoreCase)))
+                .Select(package => $"{project.Name} -> {package}"))
             .ToList();
 
         Assert.Empty(violations);

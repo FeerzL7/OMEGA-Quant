@@ -7,7 +7,10 @@ namespace Omega.MarketData;
 public abstract record MarketDataEvent(DateTimeOffset ObservedAtUtc);
 
 /// <summary>A candle closed on the exchange and passed all validation and sequencing checks.</summary>
-public sealed record CandleClosedEvent(Candle Candle, DateTimeOffset ObservedAtUtc)
+/// <param name="Candle">The closed candle.</param>
+/// <param name="Source">Data lineage, for example <c>binance-spot-ws</c>.</param>
+/// <param name="ObservedAtUtc">When OMEGA received it.</param>
+public sealed record CandleClosedEvent(Candle Candle, string Source, DateTimeOffset ObservedAtUtc)
     : MarketDataEvent(ObservedAtUtc);
 
 /// <summary>

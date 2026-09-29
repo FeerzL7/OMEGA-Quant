@@ -1,0 +1,28 @@
+# Local PostgreSQL for OMEGA development and integration tests.
+# Usage (from the repository root):
+#   cp docker/.env.example docker/.env   # then set a real password in docker/.env
+#   docker compose -f docker/docker-compose.yml up -d
+# The port is bound to localhost only. docker/.env is ignored by git.
+name: omega
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: omega-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omega
+      POSTGRES_USER: omega
+      POSTGRES_PASSWORD: ${OMEGA_POSTGRES_PASSWORD:?Set OMEGA_POSTGRES_PASSWORD in docker/.env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - omega-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omega -d omega"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  omega-postgres-data:
