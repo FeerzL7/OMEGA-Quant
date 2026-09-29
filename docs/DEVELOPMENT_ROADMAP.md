@@ -16,8 +16,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 0    | Architecture and Repository         | **Completada** |
 | 1    | Binance Market Data                 | **Completada** |
 | 2    | Persistence                         | **Completada** |
-| 3    | Market State and Candle Engine      | Siguiente     |
-| 4    | Feature Engine                      | Pendiente     |
+| 3    | Market State and Candle Engine      | **Completada** |
+| 4    | Feature Engine                      | Siguiente     |
 | 5    | Backtester                          | Pendiente     |
 | 6    | Baseline Strategy                   | Pendiente     |
 | 7    | Machine Learning                    | Pendiente     |
@@ -54,6 +54,14 @@ siguiente sin instrucción del propietario.
   Propuesta para decidir al iniciar la Fase 3: incluir el relleno de huecos por REST (`GET /api/v3/klines`)
   como parte de "Candle validation" y "Data freshness", porque sin él el histórico tendrá agujeros.
 * Tests de persistencia: requieren PostgreSQL (`OMEGA_TEST_POSTGRES`); sin él se reportan como omitidos.
+
+### Notas de la Fase 3
+
+* Diseño y decisiones: [ADR-008](decisions/ADR-008-market-state-and-backfill.md). Incluye el relleno de huecos
+  por REST (decisión delegada, D-025).
+* Agregación de velas no implementada: no la requiere ninguna fase todavía (D-028).
+* `MarketState.IsReliable` es la señal de integridad que Strategy (Fases 6-9) y Risk (Fase 10) deberán respetar.
+* Pendiente de revisar con datos reales: el periodo de gracia de frescura (60 s) y la latencia típica de las velas.
 
 ---
 

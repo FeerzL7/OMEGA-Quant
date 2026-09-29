@@ -23,6 +23,16 @@ public class MarketDataOptionsTests
     }
 
     [Fact]
+    public void Rest_endpoint_must_be_https_and_defaults_to_the_market_data_only_host()
+    {
+        Assert.Equal("https://data-api.binance.vision", new MarketDataOptions().RestBaseUrl);
+
+        var options = new MarketDataOptions { RestBaseUrl = "http://data-api.binance.vision" };
+
+        Assert.Contains(options.Validate(), error => error.StartsWith("MarketData:RestBaseUrl", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Symbol_must_be_upper_case_alphanumeric()
     {
         var options = new MarketDataOptions { Symbol = "btcusdt" };

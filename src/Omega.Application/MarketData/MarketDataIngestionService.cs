@@ -22,6 +22,11 @@ namespace Omega.Application.MarketData;
 /// that could not be stored before shutdown is reported as a gap on the next start.
 /// </para>
 /// <para>System events are best effort: failing to store one is logged and does not stop ingestion.</para>
+/// <para>
+/// With a <see cref="CandleGapFiller"/>, recent gaps are filled at start-up and every gap
+/// reported by the stream is filled as soon as it is detected (best effort, never blocking
+/// ingestion on failure).
+/// </para>
 /// </remarks>
 public sealed partial class MarketDataIngestionService
 {
@@ -36,6 +41,7 @@ public sealed partial class MarketDataIngestionService
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<MarketDataIngestionService> _logger;
     private readonly ExponentialBackoff _saveBackoff;
+    private readonly CandleGapFiller? _gapFiller;
 
     public MarketDataIngestionService(
         IMarketDataStream stream,
@@ -44,7 +50,8 @@ public sealed partial class MarketDataIngestionService
         MarketDataOptions options,
         TimeProvider timeProvider,
         ILogger<MarketDataIngestionService> logger,
-        ExponentialBackoff? saveBackoff = null)
+        ExponentialBackoff? saveBackoff = null,
+        CandleGapFiller? gapFiller = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(candles);
@@ -60,6 +67,7 @@ public sealed partial class MarketDataIngestionService
         _timeProvider = timeProvider;
         _logger = logger;
         _saveBackoff = saveBackoff ?? new ExponentialBackoff(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(1), Random.Shared);
+        _gapFiller = gapFiller;
     }
 
     /// <summary>
@@ -82,6 +90,11 @@ public sealed partial class MarketDataIngestionService
 
         try
         {
+            if (_gapFiller is not null)
+            {
+                await _gapFiller.FillRecentGapsAsync(_options.Symbol, _options.Interval, cancellationToken).ConfigureAwait(false);
+            }
+
             await foreach (var marketDataEvent in _stream.ReadEventsAsync(resumeAfter, cancellationToken).ConfigureAwait(false))
             {
                 switch (marketDataEvent)
@@ -96,6 +109,27 @@ public sealed partial class MarketDataIngestionService
 
                     case DataGapDetectedEvent gap:
                         await RecordGapAsync(gap, cancellationToken).ConfigureAwait(false);
+
+                        if (_gapFiller is not null)
+                        {
+                            await _gapFiller.FillAsync(
+                                gap.Symbol, gap.Interval, new CandleGap(gap.FirstMissingOpenTimeUtc, gap.MissingCandles), cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+
+                        break;
+
+                    case ClockSkewDetectedEvent skew:
+                        await RecordAsync(
+                            SystemEventTypes.ClockSkewDetected,
+                            SystemEventSeverity.Warning,
+                            $"Local clock is behind the exchange by at least {skew.Skew.TotalMilliseconds.ToString("0", CultureInfo.InvariantCulture)} ms " +
+                            "(a candle was reported closed before its close time by the local clock). Check time synchronization (NTP).",
+                            Details(
+                                ("symbol", skew.Symbol),
+                                ("candleCloseTimeUtc", Format(skew.CandleCloseTimeUtc)),
+                                ("skewMs", skew.Skew.TotalMilliseconds.ToString("0", CultureInfo.InvariantCulture))),
+                            cancellationToken).ConfigureAwait(false);
                         break;
 
                     case ConnectionStatusChangedEvent connection:

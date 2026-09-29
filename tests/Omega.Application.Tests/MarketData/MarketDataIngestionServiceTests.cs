@@ -155,7 +155,67 @@ public class MarketDataIngestionServiceTests
         Assert.Equal(SystemEventSeverity.Information, systemEvents.Events[1].Severity);
     }
 
-    private MarketDataIngestionService CreateService(IMarketDataStream stream, ISystemEventStore? systemEvents = null) =>
+    [Fact]
+    public async Task Gap_reported_by_the_stream_is_filled_before_the_next_candle_is_stored()
+    {
+        _candles.Seed(Candle(0));
+        var now = DateTimeOffset.UtcNow;
+        var stream = new FakeMarketDataStream(
+            new DataGapDetectedEvent("BTCUSDT", CandleInterval.FiveMinutes, OpenTime(1), 2, now),
+            Closed(3));
+
+        await CreateService(stream, gapFiller: GapFiller(new FakeHistoricalSource(1, 2))).RunAsync(CancellationToken.None);
+
+        Assert.Equal([.. Enumerable.Range(0, 4).Select(OpenTime)], _candles.Candles.Select(c => c.OpenTimeUtc));
+        Assert.Contains(_systemEvents.Events, e => e.EventType == SystemEventTypes.MarketDataGapFilled);
+    }
+
+    [Fact]
+    public async Task Recent_gaps_are_filled_at_start_up()
+    {
+        _candles.Seed(Candle(0));
+        _candles.Seed(Candle(3));
+
+        await CreateService(new FakeMarketDataStream(), gapFiller: GapFiller(new FakeHistoricalSource(1, 2))).RunAsync(CancellationToken.None);
+
+        Assert.Equal([.. Enumerable.Range(0, 4).Select(OpenTime)], _candles.Candles.Select(c => c.OpenTimeUtc));
+    }
+
+    [Fact]
+    public async Task Failed_fill_does_not_stop_ingestion()
+    {
+        _candles.Seed(Candle(0));
+        var source = new FakeHistoricalSource { AlwaysFailWith = new HistoricalDataException("Unreachable.", isTransient: false) };
+        var stream = new FakeMarketDataStream(
+            new DataGapDetectedEvent("BTCUSDT", CandleInterval.FiveMinutes, OpenTime(1), 2, DateTimeOffset.UtcNow),
+            Closed(3));
+
+        await CreateService(stream, gapFiller: GapFiller(source)).RunAsync(CancellationToken.None);
+
+        Assert.Equal([OpenTime(0), OpenTime(3)], _candles.Candles.Select(c => c.OpenTimeUtc));
+        Assert.Contains(_systemEvents.Events, e => e.EventType == SystemEventTypes.MarketDataGapFillFailed);
+    }
+
+    [Fact]
+    public async Task Clock_skew_is_recorded_as_a_warning()
+    {
+        var stream = new FakeMarketDataStream(
+            new ClockSkewDetectedEvent("BTCUSDT", OpenTime(1), TimeSpan.FromMilliseconds(4200), DateTimeOffset.UtcNow));
+
+        await CreateService(stream).RunAsync(CancellationToken.None);
+
+        var skew = Assert.Single(_systemEvents.Events, e => e.EventType == SystemEventTypes.ClockSkewDetected);
+        Assert.Equal(SystemEventSeverity.Warning, skew.Severity);
+        Assert.Equal("4200", skew.Details["skewMs"]);
+    }
+
+    private CandleGapFiller GapFiller(IHistoricalCandleSource source) =>
+        // Clock near the test candles: start-up back-fill only looks at the last 7 days.
+        new(source, _candles, _systemEvents, new BackfillOptions(), new ManualTimeProvider(OpenTime(20)), NullLogger<CandleGapFiller>.Instance,
+            new ExponentialBackoff(TimeSpan.FromMilliseconds(1), TimeSpan.FromMilliseconds(2), new Random(1)));
+
+    private MarketDataIngestionService CreateService(
+        IMarketDataStream stream, ISystemEventStore? systemEvents = null, CandleGapFiller? gapFiller = null) =>
         new(
             stream,
             _candles,
@@ -163,5 +223,6 @@ public class MarketDataIngestionServiceTests
             new MarketDataOptions(),
             TimeProvider.System,
             NullLogger<MarketDataIngestionService>.Instance,
-            new ExponentialBackoff(TimeSpan.FromMilliseconds(1), TimeSpan.FromMilliseconds(5), new Random(3)));
+            new ExponentialBackoff(TimeSpan.FromMilliseconds(1), TimeSpan.FromMilliseconds(5), new Random(3)),
+            gapFiller);
 }

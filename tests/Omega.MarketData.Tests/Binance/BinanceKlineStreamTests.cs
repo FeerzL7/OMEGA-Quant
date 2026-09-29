@@ -56,6 +56,21 @@ public class BinanceKlineStreamTests
     }
 
     [Fact]
+    public async Task Candle_closed_before_its_close_time_by_the_local_clock_reveals_clock_skew()
+    {
+        // The local clock reads exactly the candle's open time: it is ~5 minutes behind the exchange.
+        var factory = new ScriptedTransportFactory(ScriptedTransport.Sending(Kline(0)));
+        var stream = new BinanceKlineStream(
+            TestOptions(), factory, new FixedTimeProvider(OpenTime(0)), NullLogger<BinanceKlineStream>.Instance, new Random(7));
+
+        var events = await CollectAsync(stream, CandleCount(1));
+
+        var skew = Assert.Single(events.OfType<ClockSkewDetectedEvent>());
+        Assert.Equal(TimeSpan.FromMinutes(5) - TimeSpan.FromMilliseconds(1), skew.Skew);
+        Assert.Single(events.OfType<CandleClosedEvent>());
+    }
+
+    [Fact]
     public async Task Closed_candles_carry_their_source()
     {
         var factory = new ScriptedTransportFactory(ScriptedTransport.Sending(Kline(0)));

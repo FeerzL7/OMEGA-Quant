@@ -1,6 +1,6 @@
 # Arquitectura de OMEGA Quant
 
-Estado: Fase 2 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
+Estado: Fase 3 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
 en las fases siguientes. Las decisiones mayores están en [`decisions/`](decisions/) y en
 [`DECISION_LOG.md`](DECISION_LOG.md).
 
@@ -24,18 +24,18 @@ atraviesa por fuera.**
 
 | Proyecto               | Tipo                | Responsabilidad                                                                 | Contenido actual |
 |------------------------|---------------------|----------------------------------------------------------------------------------|---------------------|
-| `Omega.Core`           | Librería            | Entidades, value objects, enums, contratos y reglas de dominio fundamentales.     | `TradingMode`, `SignalDirection`, `Result`/`Error`, `TradingOptions`, `Candle`, `CandleInterval`, `SystemEvent`, contratos de persistencia (`ICandleStore`, `ISystemEventStore`), `ExponentialBackoff` |
-| `Omega.MarketData`     | Librería            | Conexión a datos de mercado de Binance, normalización, velas, validación.        | Stream de velas cerradas Binance Spot (ADR-003) |
+| `Omega.Core`           | Librería            | Entidades, value objects, enums, contratos y reglas de dominio fundamentales.     | `TradingMode`, `SignalDirection`, `Result`/`Error`, `TradingOptions`, `Candle`, `CandleInterval`, `SystemEvent`, `MarketState` + `MarketStateEvaluator`, contratos de persistencia (`ICandleStore`, `ISystemEventStore`), `ExponentialBackoff` |
+| `Omega.MarketData`     | Librería            | Conexión a datos de mercado de Binance, normalización, velas, validación.        | Stream de velas cerradas y fuente REST histórica de Binance Spot (ADR-003, ADR-008) |
 | `Omega.Features`       | Librería            | Cálculo y validación de features e indicadores.                                  | Vacío |
 | `Omega.Strategy`       | Librería            | Inferencia, probabilidad, calibración, régimen, valor esperado, señales. No define tamaño de posición. | Vacío |
 | `Omega.Risk`           | Librería            | Límites, tamaño de posición, exposición, drawdown, rechazo de operaciones.       | Vacío |
 | `Omega.Execution`      | Librería            | Órdenes, ciclo de vida, proveedores de ejecución, filtros del exchange.          | Vacío |
 | `Omega.Backtesting`    | Librería            | Simulación histórica, costos, métricas, curva de equity.                         | Vacío |
-| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | `MarketDataIngestionService` (stream → persistencia) |
-| `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, `PostgresCandleStore`, `PostgresSystemEventStore` (ADR-002) |
-| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status` |
+| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta (stream → persistencia), relleno de huecos, estado de mercado y monitor de frescura |
+| `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, repositorios (ADR-002); composición compartida de persistencia y opciones validadas |
+| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state` |
 | `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel placeholder sin datos |
-| `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones al arrancar y aloja la ingesta de datos de mercado |
+| `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones, aloja la ingesta y el monitor de frescura |
 
 ## 4. Reglas de dependencia
 
@@ -52,8 +52,10 @@ Omega.Infrastructure  (+ paquete Npgsql; implementa las abstracciones de Core)
 Omega.Api ────────┤
 Omega.Worker ─────┘
 
+Omega.Infrastructure (+ Microsoft.Extensions.Options.ConfigurationExtensions: composición compartida)
 Omega.Application ──► Omega.MarketData, Omega.Core
 Omega.Worker ───────► Omega.Application, Omega.MarketData, Omega.Infrastructure   (raíz de composición)
+Omega.Api ──────────► Omega.Application, Omega.Infrastructure                     (raíz de composición)
 
 Omega.UI           (sin referencias a proyectos; hablará con Omega.Api por HTTP)
 ```
@@ -116,7 +118,9 @@ CORRECTO:    UI → API → Application → Risk Engine → Decision Engine → 
 ## 7. Hosts
 
 * **API**: ASP.NET Core minimal APIs. `/health` usa el sistema de health checks integrado (liveness del
-  proceso). `/api/system/status` expone el modo configurado.
+  proceso). `/api/system/status` expone el modo configurado. `/api/market/{symbol}/{interval}/state` expone el
+  estado de mercado (400 con entrada inválida, 503 si la base no está disponible, sin detalles internos). Al
+  arrancar verifica el esquema de la base, igual que el Worker.
 * **UI**: Blazor Web App con renderizado estático en servidor (sin interactividad). El modo interactivo se
   decidirá cuando exista la primera función que lo requiera (ver ADR-006).
 * **Worker**: raíz de composición. Al arrancar verifica el esquema de la base (y aplica migraciones si
@@ -138,7 +142,18 @@ Detalle y justificación en [ADR-003](decisions/ADR-003-binance.md).
 * `ReadEventsAsync` recibe la última vela conocida (la última persistida): no la repite y reporta como hueco lo
   que falte desde ella, también entre reinicios.
 
-## 7.2 Persistencia (Fase 2)
+## 7.2 Estado de mercado y relleno de huecos (Fase 3)
+
+Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfill.md).
+
+* `MarketState` (Core): frescura `NO_DATA`/`FRESH`/`STALE`, antigüedad de los datos, huecos en la ventana de
+  integridad (24 h) e `IsReliable`. Strategy y Risk deberán tratar `IsReliable = false` como bloqueo.
+* Relleno de huecos por REST (`data-api.binance.vision`, `GET /api/v3/klines`) al detectarlos y al arrancar
+  (7 días), best effort. La vela en formación que devuelve REST nunca se acepta.
+* `CLOCK_SKEW_DETECTED` cuando el reloj local va atrasado respecto al exchange.
+* Agregación de velas: no implementada (no requerida todavía).
+
+## 7.3 Persistencia (Fase 2)
 
 Detalle y justificación en [ADR-002](decisions/ADR-002-postgresql.md).
 
@@ -158,7 +173,7 @@ IMarketDataStream ──► MarketDataIngestionService (Omega.Application) ─�
 ## 8. Configuración
 
 Secciones previstas por la constitución: `Omega`, `MarketData`, `Trading`, `Risk`, `Database`, `Binance`.
-Existen **`Trading`** (API y Worker), **`MarketData`** y **`Database`** (Worker):
+Existen **`Trading`**, **`MarketState`** y **`Database`** (API y Worker) y **`MarketData`** (Worker):
 
 ```json
 {
@@ -171,7 +186,16 @@ Existen **`Trading`** (API y Worker), **`MarketData`** y **`Database`** (Worker)
     "ReceiveIdleTimeout": "00:00:30",
     "ReconnectInitialDelay": "00:00:01",
     "ReconnectMaxDelay": "00:01:00",
-    "MaxConnectionLifetime": "23:00:00"
+    "MaxConnectionLifetime": "23:00:00",
+    "RestBaseUrl": "https://data-api.binance.vision",
+    "RestRequestTimeout": "00:00:15",
+    "ClockSkewTolerance": "00:00:02",
+    "Backfill": { "Enabled": true, "StartupLookback": "7.00:00:00", "MaxAttempts": 3 }
+  },
+  "MarketState": {
+    "FreshnessGracePeriod": "00:01:00",
+    "IntegrityWindow": "1.00:00:00",
+    "EvaluationInterval": "00:00:30"
   },
   "Database": {
     "ApplyMigrationsOnStartup": false

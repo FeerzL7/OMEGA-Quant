@@ -1,7 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <!-- Local development secrets (never committed): Database:ConnectionString. -->
+    <UserSecretsId>omega-api-3f6c2a4e-9d1b-4f7e-8a52-6b0c1d9e7f31</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+    <ProjectReference Include="..\Omega.Application\Omega.Application.csproj" />
+    <ProjectReference Include="..\Omega.Infrastructure\Omega.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

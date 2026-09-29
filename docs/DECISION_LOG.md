@@ -31,6 +31,12 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-022  | 2026-09-28 | La ingesta reanuda desde la última vela persistida; los huecos entre reinicios se detectan y registran. El relleno de huecos (REST histórico) queda pendiente. | Adoptada en Fase 2 | [ADR-002](decisions/ADR-002-postgresql.md) |
 | D-023  | 2026-09-28 | PostgreSQL de desarrollo con `docker compose` (imagen `postgres:17`, puerto solo en 127.0.0.1, contraseña en `docker/.env` ignorado por git). Tests de persistencia contra PostgreSQL real, omitidos si no se define `OMEGA_TEST_POSTGRES`. | Adoptada en Fase 2 | [README](../README.md) |
 | D-024  | 2026-09-28 | `ReconnectBackoff` pasa a `Omega.Core.Resilience.ExponentialBackoff`, compartido por reconexión y reintentos de escritura. | Adoptada en Fase 2 | `src/Omega.Core/Resilience` |
+| D-025  | 2026-09-29 | Relleno de huecos por REST (`data-api.binance.vision`) en la Fase 3: al detectarlos y al arrancar (7 días), best effort, respetando 429/418 y `Retry-After`. Desactivable (`MarketData:Backfill:Enabled`). | Aceptada (delegada por el propietario) | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) |
+| D-026  | 2026-09-29 | Estado de mercado como evaluación pura en Core. Frescura: siguiente vela no vencida más 60 s de gracia. Integridad: sin huecos en 24 h. `IsReliable` = ambas. | Adoptada en Fase 3 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) |
+| D-027  | 2026-09-29 | Desfase de reloj: se registra `CLOCK_SKEW_DETECTED` y la vela se acepta (el timestamp del exchange manda). Velas REST: solo cerradas hace al menos 2 s. | Adoptada en Fase 3 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) |
+| D-028  | 2026-09-29 | Agregación de velas: no se implementa hasta que una fase requiera otro intervalo. | Adoptada en Fase 3 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) |
+| D-029  | 2026-09-29 | La API accede a PostgreSQL (solo lectura en esta fase) y expone `GET /api/market/{symbol}/{interval}/state`. Composición de persistencia y opciones validadas centralizada en `Omega.Infrastructure`. | Adoptada en Fase 3 | [ARCHITECTURE §7](ARCHITECTURE.md) |
+| D-030  | 2026-09-29 | Numeración: ADR-008 para esta fase, porque ADR-004 queda reservado a ML según el roadmap. | Adoptada en Fase 3 | — |
 
 ## ADRs
 
@@ -43,3 +49,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | ADR-005 | Backtesting | No redactado (Fase 5) |
 | [ADR-006](decisions/ADR-006-blazor-ui.md) | UI con Blazor | Aceptado |
 | ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |
+| [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |

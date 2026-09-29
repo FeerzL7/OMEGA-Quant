@@ -69,6 +69,11 @@ public static class SystemEventTypes
     public const string MarketDataDisconnected = "MARKET_DATA_DISCONNECTED";
     public const string MarketDataGapDetected = "MARKET_DATA_GAP_DETECTED";
     public const string CandleConflict = "CANDLE_CONFLICT";
+    public const string MarketDataGapFilled = "MARKET_DATA_GAP_FILLED";
+    public const string MarketDataGapFillFailed = "MARKET_DATA_GAP_FILL_FAILED";
+    public const string MarketDataStale = "MARKET_DATA_STALE";
+    public const string MarketDataFresh = "MARKET_DATA_FRESH";
+    public const string ClockSkewDetected = "CLOCK_SKEW_DETECTED";
 }
 
 /// <summary>Durable, append-only log of <see cref="SystemEvent"/>.</summary>

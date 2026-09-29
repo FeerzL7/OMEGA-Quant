@@ -30,6 +30,19 @@ public sealed record DataGapDetectedEvent(
     DateTimeOffset ObservedAtUtc)
     : MarketDataEvent(ObservedAtUtc);
 
+/// <summary>
+/// A candle was reported closed although, by the local clock, its close time is still
+/// in the future: the local clock is behind the exchange by at least <paramref name="Skew"/>.
+/// The candle is still accepted (exchange timestamps are authoritative), but anything that
+/// relies on the local clock (freshness, latency) is off by that amount.
+/// </summary>
+public sealed record ClockSkewDetectedEvent(
+    string Symbol,
+    DateTimeOffset CandleCloseTimeUtc,
+    TimeSpan Skew,
+    DateTimeOffset ObservedAtUtc)
+    : MarketDataEvent(ObservedAtUtc);
+
 /// <summary>The connection to the market-data source changed state.</summary>
 public sealed record ConnectionStatusChangedEvent(ConnectionStatus Status, string Reason, DateTimeOffset ObservedAtUtc)
     : MarketDataEvent(ObservedAtUtc);

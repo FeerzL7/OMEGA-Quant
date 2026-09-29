@@ -11,10 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
-**Fase 2 — Persistencia.** El Worker recibe en tiempo real las velas **cerradas** de BTCUSDT 5m desde Binance
-Spot (solo datos públicos de mercado) y las guarda en PostgreSQL junto con los eventos de sistema (conexiones,
-huecos, conflictos). Al reiniciar continúa desde la última vela guardada y registra lo que falte. No hay
-estrategia, riesgo, ML ni ejecución. Ver [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
+**Fase 3 — Estado de mercado.** El Worker recibe en tiempo real las velas **cerradas** de BTCUSDT 5m desde
+Binance Spot (solo datos públicos de mercado), las guarda en PostgreSQL, **rellena los huecos** desde el
+histórico REST de Binance y vigila la frescura de los datos. La API expone el estado de mercado (frescura,
+huecos, si los datos son confiables). No hay estrategia, riesgo, ML ni ejecución. Ver [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
 ## Requisitos
 
@@ -59,6 +59,12 @@ Endpoints actuales de la API:
 
 * `GET /health`: liveness del proceso. No verifica Binance, base de datos ni modelos (no existen todavía).
 * `GET /api/system/status`: servicio, modo de trading configurado y hora UTC del servidor.
+* `GET /api/market/BTCUSDT/5m/state`: estado de mercado (última vela cerrada, frescura `FRESH`/`STALE`/`NO_DATA`,
+  huecos en las últimas 24 h e `isReliable`). La API también necesita la cadena de conexión:
+
+```bash
+dotnet user-secrets set "Database:ConnectionString" "Host=localhost;Port=5432;Database=omega;Username=omega;Password=<tu contraseña>" --project src/Omega.Api
+```
 
 ### Ejecutar el Worker (ingesta en vivo)
 
@@ -71,10 +77,11 @@ dotnet run --project src/Omega.Worker
 
 En Development el Worker aplica las migraciones al arrancar. Deberías ver `Applied migration 0001_initial_schema`
 (solo la primera vez), `Market-data connection Connected` y, al cerrar cada vela de 5 minutos (hora UTC),
-`Candle stored BTCUSDT FiveMinutes ...`. Para revisar lo guardado:
+`Candle stored BTCUSDT FiveMinutes ...`. Si hubo un hueco (por ejemplo, el Worker estuvo detenido), verás
+`Market-data gap: ...` seguido de `Gap BTCUSDT ...: N missing, N stored`. Para revisar lo guardado:
 
 ```sql
-SELECT open_time, close_price, base_volume, trade_count FROM candles ORDER BY open_time DESC LIMIT 10;
+SELECT open_time, close_price, base_volume, trade_count, source FROM candles ORDER BY open_time DESC LIMIT 10;
 SELECT occurred_at, event_type, severity, message FROM system_events ORDER BY id DESC LIMIT 20;
 ```
 

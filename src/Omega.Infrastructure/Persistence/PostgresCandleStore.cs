@@ -35,6 +35,66 @@ public sealed class PostgresCandleStore(NpgsqlDataSource dataSource) : ICandleSt
         ORDER BY open_time
         """;
 
+    // Candles from the last one before the range to the first one at/after its end, so gaps that cross
+    // either boundary are seen whole. Served by the primary-key index (symbol, interval_code, open_time).
+    private const string SelectGapBoundariesSql = """
+        WITH bounded AS (
+            SELECT open_time, lag(open_time) OVER (ORDER BY open_time) AS previous_open_time
+            FROM candles
+            WHERE symbol = $1 AND interval_code = $2
+              AND open_time >= COALESCE(
+                    (SELECT max(open_time) FROM candles WHERE symbol = $1 AND interval_code = $2 AND open_time < $3), $3)
+              AND open_time <= COALESCE(
+                    (SELECT min(open_time) FROM candles WHERE symbol = $1 AND interval_code = $2 AND open_time >= $4), $4)
+        )
+        SELECT previous_open_time, open_time
+        FROM bounded
+        WHERE previous_open_time IS NOT NULL AND open_time - previous_open_time > $5
+        ORDER BY open_time
+        """;
+
+    public Task<IReadOnlyList<CandleGap>> FindGapsAsync(
+        string symbol,
+        CandleInterval interval,
+        DateTimeOffset fromOpenTimeUtc,
+        DateTimeOffset toOpenTimeUtc,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(symbol);
+        if (toOpenTimeUtc <= fromOpenTimeUtc)
+        {
+            throw new ArgumentException("The end of the range must be after its start.", nameof(toOpenTimeUtc));
+        }
+
+        var length = interval.ToTimeSpan();
+
+        return NpgsqlErrors.TranslateAsync("Finding candle gaps", async () =>
+        {
+            await using var command = dataSource.CreateCommand(SelectGapBoundariesSql);
+            AddKey(command, symbol, interval, fromOpenTimeUtc);
+            command.Parameters.Add(Timestamp(toOpenTimeUtc));
+            command.Parameters.Add(new NpgsqlParameter<TimeSpan> { TypedValue = length, NpgsqlDbType = NpgsqlDbType.Interval });
+
+            var gaps = new List<CandleGap>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var previous = reader.GetFieldValue<DateTimeOffset>(0);
+                var next = reader.GetFieldValue<DateTimeOffset>(1);
+                var gap = new CandleGap(previous + length, (int)((next - previous).Ticks / length.Ticks) - 1);
+
+                if (gap.MissingCandles > 0 && gap.FirstMissingOpenTimeUtc < toOpenTimeUtc && next > fromOpenTimeUtc)
+                {
+                    gaps.Add(gap);
+                }
+            }
+
+            IReadOnlyList<CandleGap> result = gaps;
+            return result;
+        });
+    }
+
     public Task<CandleSaveOutcome> SaveAsync(
         Candle candle, string source, DateTimeOffset observedAtUtc, CancellationToken cancellationToken)
     {

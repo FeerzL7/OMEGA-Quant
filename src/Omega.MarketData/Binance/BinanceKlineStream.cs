@@ -254,6 +254,15 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
         }
 
         var candle = normalized.Value;
+        var observedAt = Now;
+
+        if (candle.CloseTimeUtc - observedAt > _options.ClockSkewTolerance)
+        {
+            var skew = candle.CloseTimeUtc - observedAt;
+            LogClockSkew(_logger, candle.Symbol, candle.CloseTimeUtc, skew.TotalMilliseconds);
+            Publish(writer, new ClockSkewDetectedEvent(candle.Symbol, candle.CloseTimeUtc, skew, observedAt));
+        }
+
         var sequence = sequencer.Accept(candle);
 
         switch (sequence.Outcome)
@@ -272,7 +281,7 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
                 break;
         }
 
-        Publish(writer, new CandleClosedEvent(candle, SourceName, Now));
+        Publish(writer, new CandleClosedEvent(candle, SourceName, observedAt));
     }
 
     private static void Publish(ChannelWriter<MarketDataEvent> writer, MarketDataEvent marketDataEvent) =>
@@ -310,6 +319,10 @@ public sealed partial class BinanceKlineStream : IMarketDataStream
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Closed kline rejected ({ErrorCode}): {ErrorMessage}")]
     private static partial void LogRejectedKline(ILogger logger, string errorCode, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Clock skew: {Symbol} candle closing at {CloseTimeUtc:O} was reported closed {SkewMs:0} ms early by the local clock.")]
+    private static partial void LogClockSkew(ILogger logger, string symbol, DateTimeOffset closeTimeUtc, double skewMs);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Duplicate closed candle {OpenTimeUtc:O} discarded.")]
     private static partial void LogDuplicateCandle(ILogger logger, DateTimeOffset openTimeUtc);

@@ -21,6 +21,18 @@ public interface ICandleStore
     /// <summary>Most recent stored candle for the symbol and interval, or null when there is none.</summary>
     Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Gaps between stored candles that overlap [<paramref name="fromOpenTimeUtc"/>, <paramref name="toOpenTimeUtc"/>),
+    /// oldest first, each reported whole. Candles missing after the latest stored one are not a gap (that
+    /// is freshness), and neither is the period before the first stored candle.
+    /// </summary>
+    Task<IReadOnlyList<CandleGap>> FindGapsAsync(
+        string symbol,
+        CandleInterval interval,
+        DateTimeOffset fromOpenTimeUtc,
+        DateTimeOffset toOpenTimeUtc,
+        CancellationToken cancellationToken);
+
     /// <summary>Stored candles with open time in [<paramref name="fromOpenTimeUtc"/>, <paramref name="toOpenTimeUtc"/>), oldest first.</summary>
     Task<IReadOnlyList<Candle>> GetRangeAsync(
         string symbol,

@@ -17,6 +17,23 @@ public sealed partial class MarketDataOptions
     /// </summary>
     public string StreamBaseUrl { get; set; } = "wss://data-stream.binance.vision";
 
+    /// <summary>
+    /// Base REST endpoint for historical candles (gap back-fill). The default serves
+    /// public market data only. See docs/decisions/ADR-008-market-state-and-backfill.md.
+    /// </summary>
+    public string RestBaseUrl { get; set; } = "https://data-api.binance.vision";
+
+    /// <summary>Timeout of one REST request.</summary>
+    public TimeSpan RestRequestTimeout { get; set; } = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    /// Tolerated difference between the local clock and exchange timestamps. A candle
+    /// reported closed whose close time is further in the future than this reveals a
+    /// local clock behind the exchange; REST candles are only accepted as closed once
+    /// their close time is at least this far in the past.
+    /// </summary>
+    public TimeSpan ClockSkewTolerance { get; set; } = TimeSpan.FromSeconds(2);
+
     /// <summary>Exchange symbol in upper case.</summary>
     public string Symbol { get; set; } = "BTCUSDT";
 
@@ -50,6 +67,21 @@ public sealed partial class MarketDataOptions
         if (!Uri.TryCreate(StreamBaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != "wss")
         {
             errors.Add("MarketData:StreamBaseUrl must be an absolute wss:// URL.");
+        }
+
+        if (!Uri.TryCreate(RestBaseUrl, UriKind.Absolute, out var restUri) || restUri.Scheme != Uri.UriSchemeHttps)
+        {
+            errors.Add("MarketData:RestBaseUrl must be an absolute https:// URL.");
+        }
+
+        if (RestRequestTimeout <= TimeSpan.Zero)
+        {
+            errors.Add("MarketData:RestRequestTimeout must be positive.");
+        }
+
+        if (ClockSkewTolerance < TimeSpan.Zero || ClockSkewTolerance > TimeSpan.FromMinutes(1))
+        {
+            errors.Add("MarketData:ClockSkewTolerance must be between 0 and 1 minute.");
         }
 
         if (string.IsNullOrWhiteSpace(Symbol) || !SymbolPattern().IsMatch(Symbol))

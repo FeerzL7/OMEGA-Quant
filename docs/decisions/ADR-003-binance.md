@@ -34,7 +34,7 @@ ellos (en especial la 14 y la 15).
    solo `wss://`).
 3. **Huecos: detectar y reportar, no rellenar.** Un hueco genera `DataGapDetectedEvent` (integridad no
    garantizada para ese periodo). El relleno por REST se hará cuando exista persistencia (Fases 2-3).
-   *Estado tras la Fase 2: los huecos se persisten como eventos de sistema; el relleno sigue pendiente.*
+   *Estado tras la Fase 2: los huecos se persisten como eventos de sistema. Fase 3: relleno por REST implementado (ADR-008).*
 4. **Solo velas cerradas** (`x = true`) salen del adaptador. Las actualizaciones de la vela en curso se descartan.
 
 ## Diseño

@@ -113,6 +113,29 @@ internal sealed class InMemoryCandleStore : ICandleStore
     public Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
         Task.FromResult(Candles.LastOrDefault(c => c.Symbol == symbol && c.Interval == interval));
 
+    public Task<IReadOnlyList<CandleGap>> FindGapsAsync(
+        string symbol, CandleInterval interval, DateTimeOffset fromOpenTimeUtc, DateTimeOffset toOpenTimeUtc, CancellationToken cancellationToken)
+    {
+        FindGapsCalls++;
+        var length = interval.ToTimeSpan();
+        var opens = Candles.Where(c => c.Symbol == symbol && c.Interval == interval).Select(c => c.OpenTimeUtc).ToList();
+        var gaps = new List<CandleGap>();
+
+        for (var i = 1; i < opens.Count; i++)
+        {
+            var missing = (int)((opens[i] - opens[i - 1]).Ticks / length.Ticks) - 1;
+            var gap = new CandleGap(opens[i - 1] + length, missing);
+            if (missing > 0 && gap.FirstMissingOpenTimeUtc < toOpenTimeUtc && opens[i] > fromOpenTimeUtc)
+            {
+                gaps.Add(gap);
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<CandleGap>>(gaps);
+    }
+
+    public int FindGapsCalls { get; private set; }
+
     public Task<IReadOnlyList<Candle>> GetRangeAsync(
         string symbol, CandleInterval interval, DateTimeOffset fromOpenTimeUtc, DateTimeOffset toOpenTimeUtc, CancellationToken cancellationToken)
     {
@@ -164,4 +187,46 @@ internal static class TestCandles
 
     public static CandleClosedEvent Closed(int index, decimal close = 100.5m) =>
         new(Candle(index, close), "test-source", OpenTime(index).AddMinutes(5).AddMilliseconds(150));
+}
+
+/// <summary>Historical source over a fixed set of available candle indices; failures can be scripted.</summary>
+internal sealed class FakeHistoricalSource(params int[] availableIndices) : IHistoricalCandleSource
+{
+    public Queue<Exception> Failures { get; } = new();
+
+    public Exception? AlwaysFailWith { get; set; }
+
+    public int Calls { get; private set; }
+
+    public string SourceName => "test-history";
+
+    public Task<IReadOnlyList<Candle>> GetClosedCandlesAsync(
+        string symbol, CandleInterval interval, DateTimeOffset fromOpenTimeUtc, DateTimeOffset toOpenTimeUtc, CancellationToken cancellationToken)
+    {
+        Calls++;
+
+        if (AlwaysFailWith is not null)
+        {
+            throw AlwaysFailWith;
+        }
+
+        if (Failures.TryDequeue(out var failure))
+        {
+            throw failure;
+        }
+
+        IReadOnlyList<Candle> candles = [.. availableIndices
+            .Select(index => TestCandles.Candle(index))
+            .Where(c => c.OpenTimeUtc >= fromOpenTimeUtc && c.OpenTimeUtc < toOpenTimeUtc)
+            .OrderBy(c => c.OpenTimeUtc)];
+        return Task.FromResult(candles);
+    }
+}
+
+/// <summary>Clock set by the test; timers still use real time.</summary>
+internal sealed class ManualTimeProvider(DateTimeOffset now) : TimeProvider
+{
+    public DateTimeOffset Now { get; set; } = now;
+
+    public override DateTimeOffset GetUtcNow() => Now;
 }

@@ -6,6 +6,10 @@
   -->
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Omega.Application.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
     <ProjectReference Include="..\Omega.MarketData\Omega.MarketData.csproj" />
   </ItemGroup>
