@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <!-- Local development secrets (never committed). Not used in Phase 0. -->
+    <UserSecretsId>dotnet-Omega.Worker-a706b05a-3c41-41ee-a65b-c1df964f822f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+  </ItemGroup>
+
+</Project>

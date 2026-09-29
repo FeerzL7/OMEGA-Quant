@@ -1,0 +1,25 @@
+<section class="panel @CssClass" aria-labelledby="@HeadingId">
+    <header class="panel-head">
+        <h2 id="@HeadingId">@Title</h2>
+        @if (!string.IsNullOrWhiteSpace(AvailableFrom))
+        {
+            <span class="availability">@AvailableFrom</span>
+        }
+    </header>
+    <div class="panel-body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Roadmap phase that will provide this panel's data, e.g. "Fase 10".</summary>
+    [Parameter] public string? AvailableFrom { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string HeadingId => $"panel-{Title.ToLowerInvariant().Replace(' ', '-')}";
+}

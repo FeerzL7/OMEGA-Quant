@@ -1,0 +1,70 @@
+@page "/"
+
+<PageTitle>OMEGA Quant</PageTitle>
+
+<h1 class="visually-hidden">Panel de OMEGA Quant</h1>
+
+<p class="notice">
+    Fase 0: estructura del panel sin datos. Ningún valor de esta pantalla proviene del mercado,
+    de un modelo o de una cuenta. Cada sección indica la fase del roadmap que la alimentará.
+</p>
+
+<div class="dashboard">
+
+    <DashboardPanel Title="Mercado" AvailableFrom="Fase 1" CssClass="area-market">
+        <div class="market-strip">
+            <div class="instrument">
+                <span class="symbol">BTCUSDT</span>
+                <span class="venue">Binance Spot, velas de 5 min</span>
+            </div>
+            <MetricPlaceholder Label="Precio" Unit="USDT" />
+            <MetricPlaceholder Label="Última vela cerrada" Unit="UTC" />
+            <MetricPlaceholder Label="Frescura de datos" Unit="s" />
+        </div>
+    </DashboardPanel>
+
+    <DashboardPanel Title="Gráfico de precio" AvailableFrom="Fase 13" CssClass="area-chart">
+        <div class="empty-chart">
+            Sin datos de mercado. El gráfico se conectará cuando existan velas persistidas
+            y una API que las exponga.
+        </div>
+    </DashboardPanel>
+
+    <DashboardPanel Title="Señal" AvailableFrom="Fases 6 a 9" CssClass="area-signal">
+        <div class="signal-state">Sin señal</div>
+        <div class="metric-grid">
+            <MetricPlaceholder Label="Probabilidad cruda" Unit="%" />
+            <MetricPlaceholder Label="Probabilidad calibrada" Unit="%" />
+            <MetricPlaceholder Label="Valor esperado" Unit="% por operación" />
+            <MetricPlaceholder Label="Régimen de mercado" />
+            <MetricPlaceholder Label="Versión del modelo" />
+            <MetricPlaceholder Label="Hora de la señal" Unit="UTC" />
+        </div>
+    </DashboardPanel>
+
+    <DashboardPanel Title="Riesgo" AvailableFrom="Fase 10" CssClass="area-risk">
+        <div class="metric-row">
+            <MetricPlaceholder Label="Equity" Unit="USDT" />
+            <MetricPlaceholder Label="P&amp;L diario" Unit="USDT" />
+            <MetricPlaceholder Label="Drawdown" Unit="%" />
+            <MetricPlaceholder Label="Exposición" Unit="USDT" />
+            <MetricPlaceholder Label="Posiciones abiertas" />
+            <MetricPlaceholder Label="Kill switch" />
+        </div>
+    </DashboardPanel>
+
+    <DashboardPanel Title="Señales y operaciones recientes" AvailableFrom="Fase 12" CssClass="area-recent">
+        <p class="empty">No hay registros. El historial aparecerá con el paper trading.</p>
+    </DashboardPanel>
+
+    <DashboardPanel Title="Sistema" CssClass="area-system">
+        <div class="system-grid">
+            <StatusIndicator Label="Omega.Api" Detail="La UI aún no la consulta" />
+            <StatusIndicator Label="Worker" Detail="La UI aún no lo consulta" />
+            <StatusIndicator Label="Binance" Detail="Fase 1" />
+            <StatusIndicator Label="Base de datos" Detail="Fase 2" />
+            <StatusIndicator Label="Modelo" Detail="Fase 7" />
+        </div>
+    </DashboardPanel>
+
+</div>

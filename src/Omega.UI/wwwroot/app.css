@@ -1,0 +1,58 @@
+/*
+  OMEGA design tokens.
+  Colour carries state (ok / warn / down / neutral), never decoration.
+  System font stack on purpose: an internal tool should not depend on external font CDNs.
+*/
+:root {
+    --bg: #161b21;
+    --panel: #1d242c;
+    --line: #2b3540;
+    --line-strong: #3b4754;
+    --text: #d6dde4;
+    --text-dim: #aab4be;
+    --muted: #7f8b98;
+    --neutral: #6c7885;
+    --ok: #3fa96b;
+    --warn: #c99a2e;
+    --down: #c8484e;
+    --focus: #7fb0d6;
+
+    color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+}
+
+a { color: var(--focus); }
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.page-title {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,176 @@
+namespace Omega.Integration.Tests.Architecture;
+
+/// <summary>
+/// Enforces the dependency rules documented in docs/ARCHITECTURE.md.
+/// A failing test here means a project reference broke the architecture.
+/// </summary>
+public class DependencyRulesTests
+{
+    private const string Core = "Omega.Core";
+    private const string Ui = "Omega.UI";
+
+    private static readonly string[] Hosts = ["Omega.Api", "Omega.UI", "Omega.Worker"];
+
+    private static readonly string[] DomainModules =
+    [
+        "Omega.MarketData", "Omega.Features", "Omega.Strategy",
+        "Omega.Risk", "Omega.Execution", "Omega.Backtesting",
+    ];
+
+    private static readonly string[] ForbiddenForUi =
+    [
+        "Omega.MarketData", "Omega.Features", "Omega.Strategy", "Omega.Risk",
+        "Omega.Execution", "Omega.Backtesting", "Omega.Infrastructure", "Omega.Worker",
+    ];
+
+    // Package name fragments that would give the UI direct access to the exchange,
+    // the database or ML runtimes.
+    private static readonly string[] ForbiddenUiPackageFragments =
+    [
+        "Binance", "Npgsql", "EntityFrameworkCore", "Microsoft.ML", "OnnxRuntime",
+    ];
+
+    private readonly SolutionProjects _solution = SolutionProjects.Load();
+
+    [Fact]
+    public void Core_references_no_other_project()
+    {
+        Assert.Empty(_solution[Core].ProjectReferences);
+    }
+
+    [Fact]
+    public void Core_references_no_package()
+    {
+        Assert.Empty(_solution[Core].PackageReferences);
+    }
+
+    [Fact]
+    public void UI_does_not_reference_trading_infrastructure_or_worker_projects()
+    {
+        var violations = _solution[Ui].ProjectReferences.Intersect(ForbiddenForUi).ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void UI_does_not_reference_exchange_database_or_ml_packages()
+    {
+        var violations = _solution[Ui].PackageReferences
+            .Where(package => ForbiddenUiPackageFragments.Any(fragment =>
+                package.Contains(fragment, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Domain_modules_do_not_reference_hosts_or_infrastructure()
+    {
+        var forbidden = Hosts.Append("Omega.Infrastructure").ToArray();
+
+        var violations = DomainModules
+            .SelectMany(module => _solution[module].ProjectReferences
+                .Where(reference => forbidden.Contains(reference))
+                .Select(reference => $"{module} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void No_project_references_a_host()
+    {
+        // Hosts are composition roots and entry points; nothing may depend on them,
+        // except test projects that test that specific host.
+        var violations = _solution.Projects.Values
+            .SelectMany(project => project.ProjectReferences
+                .Where(reference => Hosts.Contains(reference))
+                .Where(reference => project.Name != $"{reference}.Tests")
+                .Select(reference => $"{project.Name} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Production_projects_do_not_reference_test_projects()
+    {
+        var violations = _solution.Projects.Values
+            .Where(project => !project.IsTestProject)
+            .SelectMany(project => project.ProjectReferences
+                .Where(reference => reference.EndsWith(".Tests", StringComparison.Ordinal))
+                .Select(reference => $"{project.Name} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Project_reference_graph_has_no_cycles()
+    {
+        var cycle = FindCycle(_solution.Projects);
+
+        Assert.True(cycle is null, $"Circular dependency: {string.Join(" -> ", cycle ?? [])}");
+    }
+
+    [Fact]
+    public void Every_referenced_project_exists_in_the_repository()
+    {
+        var missing = _solution.Projects.Values
+            .SelectMany(project => project.ProjectReferences
+                .Where(reference => !_solution.Projects.ContainsKey(reference))
+                .Select(reference => $"{project.Name} -> {reference}"))
+            .ToList();
+
+        Assert.Empty(missing);
+    }
+
+    [Fact]
+    public void Every_project_is_part_of_the_solution_file()
+    {
+        var solutionText = File.ReadAllText(Path.Combine(_solution.RootDirectory, "OMEGA.sln"));
+
+        var missing = _solution.Projects.Keys
+            .Where(name => !solutionText.Contains($"\"{name}\"", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Empty(missing);
+    }
+
+    private static List<string>? FindCycle(IReadOnlyDictionary<string, ProjectInfo> projects)
+    {
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var path = new List<string>();
+        var onPath = new HashSet<string>(StringComparer.Ordinal);
+
+        List<string>? Visit(string name)
+        {
+            if (onPath.Contains(name))
+            {
+                return [.. path.SkipWhile(node => node != name), name];
+            }
+
+            if (!visited.Add(name) || !projects.TryGetValue(name, out var project))
+            {
+                return null;
+            }
+
+            path.Add(name);
+            onPath.Add(name);
+
+            foreach (var reference in project.ProjectReferences)
+            {
+                if (Visit(reference) is { } cycle)
+                {
+                    return cycle;
+                }
+            }
+
+            path.RemoveAt(path.Count - 1);
+            onPath.Remove(name);
+            return null;
+        }
+
+        return projects.Keys.Select(Visit).FirstOrDefault(cycle => cycle is not null);
+    }
+}

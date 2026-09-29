@@ -1,0 +1,109 @@
+.notice {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.7rem;
+    border-left: 3px solid var(--neutral);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    max-width: 80ch;
+}
+
+.dashboard {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+    grid-template-areas:
+        "market market"
+        "chart  signal"
+        "risk   risk"
+        "recent recent"
+        "system system";
+}
+
+::deep .area-market { grid-area: market; }
+::deep .area-chart { grid-area: chart; }
+::deep .area-signal { grid-area: signal; }
+::deep .area-risk { grid-area: risk; }
+::deep .area-recent { grid-area: recent; }
+::deep .area-system { grid-area: system; }
+
+.market-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1.5rem;
+}
+
+.instrument {
+    display: flex;
+    flex-direction: column;
+}
+
+.symbol {
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+}
+
+.venue {
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+.empty-chart {
+    min-height: 16rem;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 1rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    border: 1px dashed var(--line-strong);
+}
+
+.signal-state {
+    font-size: 1.1rem;
+    font-weight: 650;
+    color: var(--text-dim);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.metric-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.system-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.empty {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+    .dashboard {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "market"
+            "signal"
+            "chart"
+            "risk"
+            "recent"
+            "system";
+    }
+}

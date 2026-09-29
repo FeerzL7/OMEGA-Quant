@@ -1,0 +1,15 @@
+@* Shows a metric slot with no value. Never renders an invented number. *@
+<div class="metric">
+    <span class="label">@Label</span>
+    <span class="value" aria-label="@($"{Label}: sin datos")">—</span>
+    @if (!string.IsNullOrWhiteSpace(Unit))
+    {
+        <span class="unit">@Unit</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Unit { get; set; }
+}

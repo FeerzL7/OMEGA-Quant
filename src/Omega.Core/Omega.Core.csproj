@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Omega.Core is the dependency root of the solution.
+    It must not reference other Omega projects, exchange SDKs, databases,
+    UI frameworks, ASP.NET Core or ML libraries.
+  -->
+
+</Project>

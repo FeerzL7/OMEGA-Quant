@@ -1,0 +1,32 @@
+.indicator {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    column-gap: 0.45rem;
+    row-gap: 0.1rem;
+    font-size: 0.8rem;
+}
+
+.dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--state-color);
+    background: var(--state-fill);
+}
+
+.name { font-weight: 600; }
+
+.state { color: var(--state-color); }
+
+.detail {
+    grid-column: 2 / -1;
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+/* Not available: hollow grey dot, so it can never be confused with a healthy state. */
+.indicator-notavailable { --state-color: var(--neutral); --state-fill: transparent; }
+.indicator-healthy { --state-color: var(--ok); --state-fill: var(--ok); }
+.indicator-degraded { --state-color: var(--warn); --state-fill: var(--warn); }
+.indicator-down { --state-color: var(--down); --state-fill: var(--down); }

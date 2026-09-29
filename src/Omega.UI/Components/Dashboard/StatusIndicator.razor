@@ -1,0 +1,26 @@
+@* Status is always communicated by text as well as by the dot, never by colour alone. *@
+<div class="indicator indicator-@State.ToString().ToLowerInvariant()">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="name">@Label</span>
+    <span class="state">@StateText</span>
+    @if (!string.IsNullOrWhiteSpace(Detail))
+    {
+        <span class="detail">@Detail</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public IndicatorState State { get; set; } = IndicatorState.NotAvailable;
+
+    [Parameter] public string? Detail { get; set; }
+
+    private string StateText => State switch
+    {
+        IndicatorState.Healthy => "Operativo",
+        IndicatorState.Degraded => "Degradado",
+        IndicatorState.Down => "Caído",
+        _ => "No disponible",
+    };
+}

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Cross-project tests. In Phase 0 these are architecture tests that read the
+    .csproj files from disk, so this project needs no project references.
+  -->
+
+</Project>

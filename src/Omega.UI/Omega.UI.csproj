@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Omega.UI is a presentation layer only. It intentionally has NO project
+    references: it will talk to the system exclusively through Omega.Api (HTTP).
+    See docs/ARCHITECTURE.md and docs/decisions/ADR-006-blazor-ui.md.
+  -->
+  <PropertyGroup>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+</Project>
