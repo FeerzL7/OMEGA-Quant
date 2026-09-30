@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 6 — Estrategia base.** Benchmark sin ML (`baseline-ema-trend`) y referencia `buy-and-hold`, evaluables
+por la API con costos, significancia estadística y registro de cada ejecución. Protocolo:
+[`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md).
+
 **Fase 5 — Backtester.** Simulador por eventos sin look-ahead (decisión al cierre, ejecución a la apertura
 siguiente), con comisiones, spread, slippage, SL/TP conservadores, tamaño por riesgo, curva de equity, drawdown y
 métricas; resultados reproducibles. Reglas: [`docs/BACKTESTING.md`](docs/BACKTESTING.md). Aún no hay estrategia
@@ -68,6 +72,18 @@ Endpoints actuales de la API:
 
 * `GET /health`: liveness del proceso. No verifica Binance, base de datos ni modelos (no existen todavía).
 * `GET /api/system/status`: servicio, modo de trading configurado y hora UTC del servidor.
+* `GET /api/strategies`: estrategias evaluables (la base y los benchmarks) con su configuración por defecto.
+* `POST /api/backtests`: ejecuta y guarda un backtest sobre las velas guardadas. Ejemplo:
+
+```bash
+curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/json" -d '{
+  "strategy": "baseline-ema-trend", "symbol": "BTCUSDT", "interval": "5m",
+  "fromUtc": "2025-01-01T00:00:00Z", "toUtc": "2025-10-01T00:00:00Z", "periodLabel": "development" }'
+```
+
+  Opcionales para estrés de costos: `feeRate`, `spreadBps`, `slippageBps`. La respuesta incluye métricas,
+  estadísticas, operaciones, equity diaria y avisos (por ejemplo, si un `holdout` ya fue evaluado).
+* `GET /api/backtests` y `GET /api/backtests/{id}`: historial de ejecuciones y detalle.
 * `GET /api/features/catalog`: conjunto de features activo (versión, hash y ficha de cada feature).
 * `GET /api/market/BTCUSDT/5m/features/latest`: features de la última vela cerrada guardada (`null` mientras se
   calientan; 422 si falta una vela en la ventana necesaria).
@@ -150,4 +166,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md)
 * [`docs/FEATURES.md`](docs/FEATURES.md)
 * [`docs/BACKTESTING.md`](docs/BACKTESTING.md)
+* [`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md)
 * [`docs/decisions/`](docs/decisions/)

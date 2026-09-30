@@ -93,4 +93,5 @@ public sealed record BacktestResult(
     IReadOnlyList<BacktestRejection> Rejections,
     IReadOnlyDictionary<NoTradeReason, int> NoTradeCounts,
     IReadOnlyList<string> Warnings,
-    BacktestMetrics Metrics);
+    BacktestMetrics Metrics,
+    TradeStatistics Statistics);

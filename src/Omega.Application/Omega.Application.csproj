@@ -13,6 +13,8 @@
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
     <ProjectReference Include="..\Omega.MarketData\Omega.MarketData.csproj" />
     <ProjectReference Include="..\Omega.Features\Omega.Features.csproj" />
+    <ProjectReference Include="..\Omega.Strategy\Omega.Strategy.csproj" />
+    <ProjectReference Include="..\Omega.Backtesting\Omega.Backtesting.csproj" />
   </ItemGroup>
 
 </Project>

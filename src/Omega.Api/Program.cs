@@ -1,8 +1,11 @@
 using Microsoft.Extensions.Options;
 using Omega.Api.Endpoints;
+using System.Text.Json.Serialization;
+using Omega.Application.Backtesting;
 using Omega.Application.Features;
 using Omega.Application.MarketData;
 using Omega.Core.Configuration;
+using Omega.Backtesting;
 using Omega.Core.MarketData;
 using Omega.Features;
 using Omega.Infrastructure.Configuration;
@@ -25,6 +28,15 @@ builder.Services.AddSingleton(new FeatureEngine(FeatureSets.V1()));
 builder.Services.AddSingleton(services => new FeatureService(
     services.GetRequiredService<ICandleStore>(), services.GetRequiredService<FeatureEngine>()));
 
+builder.Services.AddSingleton(services => new BacktestService(
+    services.GetRequiredService<ICandleStore>(),
+    services.GetRequiredService<IBacktestRunStore>(),
+    services.GetRequiredService<FeatureEngine>(),
+    services.GetRequiredService<TimeProvider>()));
+
+// Enums as names in every response (readable, stable across enum reordering).
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
 
@@ -43,6 +55,7 @@ app.MapHealthChecks("/health");
 app.MapSystemEndpoints();
 app.MapMarketEndpoints();
 app.MapFeatureEndpoints();
+app.MapBacktestEndpoints();
 
 await app.RunAsync();
 return 0;

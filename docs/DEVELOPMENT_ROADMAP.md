@@ -19,8 +19,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 3    | Market State and Candle Engine      | **Completada** |
 | 4    | Feature Engine                      | **Completada** |
 | 5    | Backtester                          | **Completada** |
-| 6    | Baseline Strategy                   | Siguiente     |
-| 7    | Machine Learning                    | Pendiente     |
+| 6    | Baseline Strategy                   | **Completada** |
+| 7    | Machine Learning                    | Siguiente     |
 | 8    | Probability Calibration             | Pendiente     |
 | 9    | Expected Value                      | Pendiente     |
 | 10   | Risk Engine                         | Pendiente     |
@@ -78,6 +78,15 @@ siguiente sin instrucción del propietario.
 * Antes de interpretar resultados de la Fase 6 conviene importar varios meses de historia real
   (`MarketData:Backfill:HistoryStart`) y fijar el periodo de validación fuera de muestra **antes** de mirar
   resultados (§10, §22).
+
+### Notas de la Fase 6
+
+* Decisiones: [ADR-010](decisions/ADR-010-baseline-and-evaluation.md). Protocolo: [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md).
+* **Pendiente del propietario antes de interpretar nada:** importar historia real y fijar por escrito los
+  periodos `development` y `holdout`.
+* Para la Fase 7: el objetivo triple-barrier debe usar las mismas barreras que la base (2·ATR, 3·ATR, 48 velas)
+  y los mismos periodos, y los modelos se evaluarán con `BacktestService` contra `baseline-ema-trend` y
+  `buy-and-hold`. ADR-004 (ML con Python y ONNX) debe redactarse al inicio de esa fase.
 
 ---
 

@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Omega.Infrastructure\Omega.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Omega.Features\Omega.Features.csproj" />
+    <ProjectReference Include="..\..\src\Omega.Backtesting\Omega.Backtesting.csproj" />
   </ItemGroup>
 
 </Project>

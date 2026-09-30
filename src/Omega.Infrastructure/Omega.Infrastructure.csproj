@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+    <!-- Implements the backtest-run store defined by the Backtesting module. -->
+    <ProjectReference Include="..\Omega.Backtesting\Omega.Backtesting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

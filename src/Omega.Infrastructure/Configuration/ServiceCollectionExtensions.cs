@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Omega.Backtesting;
 using Omega.Core.MarketData;
 using Omega.Core.SystemEvents;
 using Omega.Infrastructure.Persistence;
@@ -49,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DatabaseMigrator>();
         services.AddSingleton<ICandleStore, PostgresCandleStore>();
         services.AddSingleton<ISystemEventStore, PostgresSystemEventStore>();
+        services.AddSingleton<IBacktestRunStore, PostgresBacktestRunStore>();
 
         return services;
     }

@@ -48,6 +48,11 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-039  | 2026-09-30 | Costos por defecto: comisión 0.10 % por lado (Binance Spot VIP 0, sin descuento BNB), spread 1 pb, slippage 2 pb. Tamaño por fracción fija (1 % de riesgo, sin apalancamiento). | Adoptada en Fase 5 | [BACKTESTING.md](BACKTESTING.md) |
 | D-040  | 2026-09-30 | Modelo de fills dentro de `BacktestEngine`; se extraerá detrás de `IExecutionProvider` en la Fase 12. | Adoptada en Fase 5 | [ADR-005](decisions/ADR-005-backtesting.md) |
 | D-041  | 2026-09-30 | Carga histórica opcional (`MarketData:Backfill:HistoryStart`), idempotente, en bloques de 30 días. | Adoptada en Fase 5 | [README](../README.md) |
+| D-042  | 2026-09-30 | Estrategia base `baseline-ema-trend` v1 (EMA20 > EMA50 y close > EMA20; salida EMA20 < EMA50), parámetros fijados a priori y no optimizados; mismas barreras que el objetivo de ML (2·ATR / 3·ATR / 48 velas). | Aceptada (delegada por el propietario) | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) |
+| D-043  | 2026-09-30 | Benchmark `buy-and-hold`. Todo candidato se compara contra benchmarks en los mismos periodos y costos. | Adoptada en Fase 6 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
+| D-044  | 2026-09-30 | Significancia por operación: estadístico t e IC 95 % bootstrap (10 000, semilla fija); mínimo orientativo de 30 operaciones. | Adoptada en Fase 6 | [BACKTESTING.md](BACKTESTING.md) |
+| D-045  | 2026-09-30 | Registro de backtests en `backtest_runs` (migración 0002, JSON completo, equity diaria); aviso al reevaluar un `holdout` (cualquier etiqueta o costos cuentan como mirada). | Adoptada en Fase 6 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) |
+| D-046  | 2026-09-30 | Backtests como comando de la API (`POST /api/backtests`, síncrono, hasta 3 años). | Adoptada en Fase 6 | [README](../README.md) |
 
 ## ADRs
 
@@ -62,3 +67,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |
 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |
 | [ADR-009](decisions/ADR-009-feature-engine.md) | Motor de features | Aceptado |
+| [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) | Estrategia base y protocolo de evaluación | Aceptado |

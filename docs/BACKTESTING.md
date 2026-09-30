@@ -83,11 +83,27 @@ Sobre la curva de equity (una observación por cierre de vela) y las operaciones
 El PnL de cada operación es neto: `cantidad × salida − comisión de salida − (cantidad × entrada + comisión de entrada)`,
 con precios de ejecución que ya incluyen spread y slippage.
 
+## Periodo de trading y calentamiento
+
+El servicio de backtests carga, antes del periodo pedido, solo las velas que los features necesitan para
+calentarse (lookback máximo − 1 = 249 velas en `features-v1`). Esas velas no operan ni cuentan en las métricas;
+la decisión al cierre de la última vela de calentamiento se ejecuta en la apertura de la primera vela del periodo.
+
+## Estadísticas por operación
+
+`TradeStatistics` responde si el retorno neto medio por operación (sobre el capital comprometido) se distingue de
+cero: media, desviación estándar muestral, estadístico t (`media / (desv / √n)`) e intervalo de confianza de
+95 % por bootstrap (10 000 remuestreos, semilla fija, reproducible). Suponen operaciones independientes, lo que
+rara vez es cierto: son un primer filtro, no una prueba. Ver [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md).
+
 ## Reproducibilidad
 
 Cada `BacktestResult` incluye estrategia (nombre, versión, parámetros), versión y hash del conjunto de
 features, configuración completa y huella del dataset (símbolo, intervalo, rango, número de velas y SHA-256
 de las velas con números normalizados). Dos ejecuciones sobre el mismo dataset producen resultados idénticos.
+
+Cada ejecución hecha por `POST /api/backtests` se guarda en `backtest_runs` con el resultado completo (la curva
+de equity se guarda con un punto diario; las métricas se calculan antes, con la curva completa).
 
 ## Limitaciones conocidas
 

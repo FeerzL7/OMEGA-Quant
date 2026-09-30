@@ -34,7 +34,13 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
 {
     private readonly IPositionSizer _sizer = sizer ?? new FixedFractionalSizer();
 
-    public Result<BacktestResult> Run(IReadOnlyList<Candle> candles, IStrategy strategy)
+    /// <param name="candles">Closed candles, oldest first.</param>
+    /// <param name="strategy">Strategy to evaluate.</param>
+    /// <param name="tradingStartUtc">
+    /// Candles opening before this instant only warm up the features: no decisions, no equity, no metrics.
+    /// Null: trading may start at the first candle.
+    /// </param>
+    public Result<BacktestResult> Run(IReadOnlyList<Candle> candles, IStrategy strategy, DateTimeOffset? tradingStartUtc = null)
     {
         ArgumentNullException.ThrowIfNull(candles);
         ArgumentNullException.ThrowIfNull(strategy);
@@ -56,7 +62,13 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             return Result.Failure<BacktestResult>(series.Error!);
         }
 
-        var run = new Simulation(config, _sizer, strategy, candles, series.Value);
+        var tradingStart = tradingStartUtc ?? candles[0].OpenTimeUtc;
+        if (candles[^1].OpenTimeUtc < tradingStart)
+        {
+            return Fail(BacktestErrors.NoCandles, "No candle at or after the trading start.");
+        }
+
+        var run = new Simulation(config, _sizer, strategy, candles, series.Value, tradingStart);
         run.Execute();
 
         var intervalSeconds = candles[0].Interval.ToTimeSpan().TotalSeconds;
@@ -74,14 +86,16 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             run.Rejections,
             run.NoTradeCounts,
             run.Warnings,
-            metrics));
+            metrics,
+            TradeStatistics.From(run.Trades)));
     }
 
     private static Result<BacktestResult> Fail(string code, string message) =>
         Result.Failure<BacktestResult>(new Error(code, message));
 
     private sealed class Simulation(
-        BacktestConfig config, IPositionSizer sizer, IStrategy strategy, IReadOnlyList<Candle> candles, IReadOnlyList<FeatureVector> features)
+        BacktestConfig config, IPositionSizer sizer, IStrategy strategy, IReadOnlyList<Candle> candles, IReadOnlyList<FeatureVector> features,
+        DateTimeOffset tradingStart)
     {
         private decimal _cash = config.InitialCapital;
         private decimal _peak = config.InitialCapital;
@@ -108,6 +122,18 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             for (var i = 0; i <= last; i++)
             {
                 var candle = candles[i];
+
+                if (candle.OpenTimeUtc < tradingStart)
+                {
+                    // Warm-up only. The decision at the close of the last warm-up candle is allowed:
+                    // it is executed at the open of the first trading candle.
+                    if (i + 1 <= last && candles[i + 1].OpenTimeUtc >= tradingStart)
+                    {
+                        Decide(candle, features[i]);
+                    }
+
+                    continue;
+                }
 
                 // 1. Open of candle i: act on what was decided at the close of i-1.
                 if (i > 0 && candle.OpenTimeUtc - candles[i - 1].OpenTimeUtc != candle.Interval.ToTimeSpan())
