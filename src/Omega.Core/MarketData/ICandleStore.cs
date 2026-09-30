@@ -18,6 +18,9 @@ public interface ICandleStore
     /// <param name="cancellationToken">Cancellation.</param>
     Task<CandleSaveOutcome> SaveAsync(Candle candle, string source, DateTimeOffset observedAtUtc, CancellationToken cancellationToken);
 
+    /// <summary>Oldest stored candle for the symbol and interval, or null when there is none.</summary>
+    Task<Candle?> GetEarliestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken);
+
     /// <summary>Most recent stored candle for the symbol and interval, or null when there is none.</summary>
     Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken);
 

@@ -74,6 +74,8 @@ public static class SystemEventTypes
     public const string MarketDataStale = "MARKET_DATA_STALE";
     public const string MarketDataFresh = "MARKET_DATA_FRESH";
     public const string ClockSkewDetected = "CLOCK_SKEW_DETECTED";
+    public const string HistoryImported = "HISTORY_IMPORTED";
+    public const string HistoryImportFailed = "HISTORY_IMPORT_FAILED";
 }
 
 /// <summary>Durable, append-only log of <see cref="SystemEvent"/>.</summary>

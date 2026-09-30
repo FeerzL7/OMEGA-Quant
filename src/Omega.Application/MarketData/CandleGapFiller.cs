@@ -91,9 +91,99 @@ public sealed partial class CandleGapFiller
     {
         ArgumentNullException.ThrowIfNull(gap);
 
-        var from = gap.FirstMissingOpenTimeUtc;
-        var to = gap.EndOpenTimeUtc(interval);
+        try
+        {
+            var (stored, obtained) = await FetchAndStoreAsync(
+                symbol, interval, gap.FirstMissingOpenTimeUtc, gap.EndOpenTimeUtc(interval), cancellationToken).ConfigureAwait(false);
 
+            // Already-stored or conflicting candles exist, so they are not missing either.
+            var result = new GapFillResult(gap.MissingCandles, stored, Math.Max(0, gap.MissingCandles - obtained));
+            await RecordFilledAsync(symbol, interval, gap, result, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+        catch (Exception ex) when (ex is HistoricalDataException or PersistenceException)
+        {
+            await RecordFailedAsync(symbol, interval, gap, ex, cancellationToken).ConfigureAwait(false);
+            return new GapFillResult(gap.MissingCandles, 0, gap.MissingCandles);
+        }
+    }
+
+    /// <summary>
+    /// Imports history from <see cref="BackfillOptions.HistoryStart"/> up to the oldest stored candle (or up to
+    /// the last closed candle when nothing is stored), in 30-day chunks. No-op when HistoryStart is not set or
+    /// already covered. Never throws except on cancellation; a failure is recorded and the next start resumes.
+    /// </summary>
+    public async Task ImportHistoryAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken)
+    {
+        if (_options.HistoryStart is not { } historyStart)
+        {
+            return;
+        }
+
+        var length = interval.ToTimeSpan();
+        var from = Align(historyStart, length);
+        Candle? earliest;
+
+        try
+        {
+            earliest = await _candles.GetEarliestAsync(symbol, interval, cancellationToken).ConfigureAwait(false);
+        }
+        catch (PersistenceException ex)
+        {
+            LogGapSearchFailed(_logger, ex, symbol);
+            return;
+        }
+
+        // Up to the oldest stored candle, or to the start of the candle still forming.
+        var to = earliest?.OpenTimeUtc ?? Align(_timeProvider.GetUtcNow(), length);
+        if (to <= from)
+        {
+            return;
+        }
+
+        var expected = (int)((to - from).Ticks / length.Ticks);
+        LogHistoryImportStarted(_logger, symbol, from, to, expected);
+
+        var storedTotal = 0;
+        var obtainedTotal = 0;
+        var chunk = TimeSpan.FromDays(30);
+
+        try
+        {
+            for (var start = from; start < to; start += chunk)
+            {
+                var end = start + chunk < to ? start + chunk : to;
+                var (stored, obtained) = await FetchAndStoreAsync(symbol, interval, start, end, cancellationToken).ConfigureAwait(false);
+                storedTotal += stored;
+                obtainedTotal += obtained;
+                LogHistoryImportProgress(_logger, symbol, end, obtainedTotal, expected);
+            }
+        }
+        catch (Exception ex) when (ex is HistoricalDataException or PersistenceException)
+        {
+            LogHistoryImportFailed(_logger, ex, symbol, storedTotal);
+            await RecordAsync(
+                SystemEventTypes.HistoryImportFailed,
+                SystemEventSeverity.Warning,
+                $"History import of {symbol} {interval} stopped after storing {storedTotal} candle(s): {ex.Message}. It resumes on the next start.",
+                HistoryDetails(symbol, interval, from, to, expected, storedTotal),
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        var missing = Math.Max(0, expected - obtainedTotal);
+        await RecordAsync(
+            SystemEventTypes.HistoryImported,
+            missing == 0 ? SystemEventSeverity.Information : SystemEventSeverity.Warning,
+            $"History of {symbol} {interval} imported from {Format(from)} to {Format(to)}: {storedTotal} stored, {missing} not available from {_source.SourceName}.",
+            HistoryDetails(symbol, interval, from, to, expected, storedTotal),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Fetches [from, to) with retries for transient errors and stores it. Returns (newly stored, obtained).</summary>
+    private async Task<(int Stored, int Obtained)> FetchAndStoreAsync(
+        string symbol, CandleInterval interval, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    {
         for (var attempt = 1; ; attempt++)
         {
             try
@@ -114,10 +204,7 @@ public sealed partial class CandleGapFiller
                     }
                 }
 
-                // Already-stored or conflicting candles exist, so they are not missing either.
-                var result = new GapFillResult(gap.MissingCandles, stored, Math.Max(0, gap.MissingCandles - candles.Count));
-                await RecordFilledAsync(symbol, interval, gap, result, cancellationToken).ConfigureAwait(false);
-                return result;
+                return (stored, candles.Count);
             }
             catch (HistoricalDataException ex) when (ex.IsTransient && attempt < _options.MaxAttempts)
             {
@@ -130,14 +217,23 @@ public sealed partial class CandleGapFiller
                 LogRetry(_logger, ex, symbol, from, attempt, delay.TotalSeconds);
                 await Task.Delay(delay, _timeProvider, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is HistoricalDataException or PersistenceException)
-            {
-                var result = new GapFillResult(gap.MissingCandles, 0, gap.MissingCandles);
-                await RecordFailedAsync(symbol, interval, gap, ex, cancellationToken).ConfigureAwait(false);
-                return result;
-            }
         }
     }
+
+    private static DateTimeOffset Align(DateTimeOffset time, TimeSpan length) =>
+        new(time.UtcTicks - (time.UtcTicks % length.Ticks), TimeSpan.Zero);
+
+    private Dictionary<string, string> HistoryDetails(
+        string symbol, CandleInterval interval, DateTimeOffset from, DateTimeOffset to, int expected, int stored) => new(StringComparer.Ordinal)
+    {
+        ["symbol"] = symbol,
+        ["interval"] = interval.ToCode(),
+        ["fromOpenTimeUtc"] = Format(from),
+        ["toOpenTimeUtc"] = Format(to),
+        ["expectedCandles"] = expected.ToString(CultureInfo.InvariantCulture),
+        ["stored"] = stored.ToString(CultureInfo.InvariantCulture),
+        ["source"] = _source.SourceName,
+    };
 
     private Task RecordFilledAsync(string symbol, CandleInterval interval, CandleGap gap, GapFillResult result, CancellationToken cancellationToken)
     {
@@ -203,6 +299,16 @@ public sealed partial class CandleGapFiller
     }
 
     private static string Format(DateTimeOffset value) => value.ToString("O", CultureInfo.InvariantCulture);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Importing {Symbol} history from {From:O} to {To:O} ({Expected} candle(s) expected).")]
+    private static partial void LogHistoryImportStarted(ILogger logger, string symbol, DateTimeOffset from, DateTimeOffset to, int expected);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Symbol} history import: up to {Until:O}, {Obtained}/{Expected} candle(s).")]
+    private static partial void LogHistoryImportProgress(ILogger logger, string symbol, DateTimeOffset until, int obtained, int expected);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Symbol} history import stopped after storing {Stored} candle(s).")]
+    private static partial void LogHistoryImportFailed(ILogger logger, Exception exception, string symbol, int stored);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "{Count} {Symbol} gap(s) found in the last {Days:0.#} day(s).")]
     private static partial void LogGapsFound(ILogger logger, int count, string symbol, double days);

@@ -42,6 +42,12 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-033  | 2026-09-29 | Conjunto `features-v1` (16 features) versionado con hash SHA-256 de sus definiciones. Parámetros estándar, no optimizados. | Adoptada en Fase 4 | [FEATURES.md](FEATURES.md) |
 | D-034  | 2026-09-29 | Implementación canónica de features en C#; verificada contra una implementación independiente en Python. Los features no se persisten. | Adoptada en Fase 4 | [ADR-009](decisions/ADR-009-feature-engine.md) |
 | D-035  | 2026-09-29 | Endpoints `GET /api/features/catalog` y `GET /api/market/{symbol}/{interval}/features/latest` (422 si la ventana tiene un hueco). | Adoptada en Fase 4 | [README](../README.md) |
+| D-036  | 2026-09-30 | Backtester por eventos: decisión al cierre de *t*, ejecución a la apertura de *t+1*; SL antes que TP en la misma vela; gap a través del stop a la apertura; sin crédito por gaps a favor del TP. | Aceptada (delegada por el propietario) | [ADR-005](decisions/ADR-005-backtesting.md) |
+| D-037  | 2026-09-30 | Spot solo largo: `SHORT` cierra un largo o se rechaza. | Adoptada en Fase 5 | [BACKTESTING.md](BACKTESTING.md) |
+| D-038  | 2026-09-30 | `Signal` en Core: `LONG` requiere stop loss; `NO_TRADE` requiere `NoTradeReason` (lista de §8 más `FEATURES_UNAVAILABLE`). `IStrategy` en Strategy. | Adoptada en Fase 5 | [ADR-005](decisions/ADR-005-backtesting.md) |
+| D-039  | 2026-09-30 | Costos por defecto: comisión 0.10 % por lado (Binance Spot VIP 0, sin descuento BNB), spread 1 pb, slippage 2 pb. Tamaño por fracción fija (1 % de riesgo, sin apalancamiento). | Adoptada en Fase 5 | [BACKTESTING.md](BACKTESTING.md) |
+| D-040  | 2026-09-30 | Modelo de fills dentro de `BacktestEngine`; se extraerá detrás de `IExecutionProvider` en la Fase 12. | Adoptada en Fase 5 | [ADR-005](decisions/ADR-005-backtesting.md) |
+| D-041  | 2026-09-30 | Carga histórica opcional (`MarketData:Backfill:HistoryStart`), idempotente, en bloques de 30 días. | Adoptada en Fase 5 | [README](../README.md) |
 
 ## ADRs
 
@@ -51,7 +57,7 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-002](decisions/ADR-002-postgresql.md) | Persistencia en PostgreSQL | Aceptado |
 | [ADR-003](decisions/ADR-003-binance.md) | Datos de mercado de Binance Spot | Aceptado |
 | ADR-004 | ML con Python y ONNX | No redactado (Fase 7) |
-| ADR-005 | Backtesting | No redactado (Fase 5) |
+| [ADR-005](decisions/ADR-005-backtesting.md) | Backtesting | Aceptado |
 | [ADR-006](decisions/ADR-006-blazor-ui.md) | UI con Blazor | Aceptado |
 | ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |
 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |

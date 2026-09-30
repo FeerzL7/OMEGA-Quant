@@ -54,6 +54,12 @@ public sealed class BackfillOptions
     /// <summary>Attempts per gap for transient failures (network, timeout, rate limit).</summary>
     public int MaxAttempts { get; set; } = 3;
 
+    /// <summary>
+    /// Optional start of the historical data to keep (for backtests). When set, the worker imports, at start-up,
+    /// every closed candle from this date to the oldest stored one (or to now if nothing is stored). Idempotent.
+    /// </summary>
+    public DateTimeOffset? HistoryStart { get; set; }
+
     public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
@@ -66,6 +72,12 @@ public sealed class BackfillOptions
         if (MaxAttempts is < 1 or > 10)
         {
             errors.Add("MarketData:Backfill:MaxAttempts must be between 1 and 10.");
+        }
+
+        // Binance Spot BTCUSDT history starts in 2017; earlier dates only add empty requests.
+        if (HistoryStart is { } start && (start < new DateTimeOffset(2017, 1, 1, 0, 0, 0, TimeSpan.Zero) || start.Offset != TimeSpan.Zero))
+        {
+            errors.Add("MarketData:Backfill:HistoryStart must be a UTC date on or after 2017-01-01.");
         }
 
         return errors;

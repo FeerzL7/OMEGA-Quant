@@ -75,6 +75,9 @@ public class MarketEndpointsTests
     {
         public Exception? Failure { get; init; }
 
+        public Task<Candle?> GetEarliestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
         public Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
             Failure is null ? Task.FromResult(latest) : Task.FromException<Candle?>(Failure);
 

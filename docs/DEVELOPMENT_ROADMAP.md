@@ -18,8 +18,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 2    | Persistence                         | **Completada** |
 | 3    | Market State and Candle Engine      | **Completada** |
 | 4    | Feature Engine                      | **Completada** |
-| 5    | Backtester                          | Siguiente     |
-| 6    | Baseline Strategy                   | Pendiente     |
+| 5    | Backtester                          | **Completada** |
+| 6    | Baseline Strategy                   | Siguiente     |
 | 7    | Machine Learning                    | Pendiente     |
 | 8    | Probability Calibration             | Pendiente     |
 | 9    | Expected Value                      | Pendiente     |
@@ -68,7 +68,16 @@ siguiente sin instrucción del propietario.
 * Diseño: [ADR-009](decisions/ADR-009-feature-engine.md). Catálogo con las 6 fichas por feature: [FEATURES.md](FEATURES.md).
 * `ComputeSeries` es la entrada natural del backtester (Fase 5): un vector por vela, sin look-ahead.
 * Recomendación antes de la Fase 5: una **carga histórica** de velas (REST) para tener meses de datos sobre los
-  que hacer backtests; hoy el relleno solo cubre huecos de los últimos 7 días.
+  que hacer backtests; hoy el relleno solo cubre huecos de los últimos 7 días. *(Hecho en la Fase 5.)*
+
+### Notas de la Fase 5
+
+* Reglas y métricas: [BACKTESTING.md](BACKTESTING.md). Decisiones: [ADR-005](decisions/ADR-005-backtesting.md).
+* Sin estrategia real ni punto de entrada todavía: la Fase 6 (estrategia base) traerá la forma de ejecutar y
+  guardar backtests, y la comparación contra buy & hold.
+* Antes de interpretar resultados de la Fase 6 conviene importar varios meses de historia real
+  (`MarketData:Backfill:HistoryStart`) y fijar el periodo de validación fuera de muestra **antes** de mirar
+  resultados (§10, §22).
 
 ---
 

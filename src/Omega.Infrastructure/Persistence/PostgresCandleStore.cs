@@ -29,6 +29,13 @@ public sealed class PostgresCandleStore(NpgsqlDataSource dataSource) : ICandleSt
         LIMIT 1
         """;
 
+    private const string SelectEarliestSql = $"""
+        SELECT {Columns} FROM candles
+        WHERE symbol = $1 AND interval_code = $2
+        ORDER BY open_time
+        LIMIT 1
+        """;
+
     private const string SelectRangeSql = $"""
         SELECT {Columns} FROM candles
         WHERE symbol = $1 AND interval_code = $2 AND open_time >= $3 AND open_time < $4
@@ -132,13 +139,19 @@ public sealed class PostgresCandleStore(NpgsqlDataSource dataSource) : ICandleSt
         });
     }
 
-    public Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken)
+    public Task<Candle?> GetEarliestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
+        ReadOneAsync("Reading earliest candle", SelectEarliestSql, symbol, interval, cancellationToken);
+
+    public Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
+        ReadOneAsync("Reading latest candle", SelectLatestSql, symbol, interval, cancellationToken);
+
+    private Task<Candle?> ReadOneAsync(string operation, string sql, string symbol, CandleInterval interval, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(symbol);
 
-        return NpgsqlErrors.TranslateAsync("Reading latest candle", async () =>
+        return NpgsqlErrors.TranslateAsync(operation, async () =>
         {
-            await using var command = dataSource.CreateCommand(SelectLatestSql);
+            await using var command = dataSource.CreateCommand(sql);
             command.Parameters.Add(new NpgsqlParameter<string> { TypedValue = symbol });
             command.Parameters.Add(new NpgsqlParameter<string> { TypedValue = interval.ToCode() });
 

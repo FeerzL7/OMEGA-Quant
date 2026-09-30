@@ -110,6 +110,9 @@ internal sealed class InMemoryCandleStore : ICandleStore
         return Task.FromResult(CandleSaveOutcome.Inserted);
     }
 
+    public Task<Candle?> GetEarliestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
+        Task.FromResult(Candles.FirstOrDefault(c => c.Symbol == symbol && c.Interval == interval));
+
     public Task<Candle?> GetLatestAsync(string symbol, CandleInterval interval, CancellationToken cancellationToken) =>
         Task.FromResult(Candles.LastOrDefault(c => c.Symbol == symbol && c.Interval == interval));
 

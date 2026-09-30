@@ -92,6 +92,7 @@ public sealed partial class MarketDataIngestionService
         {
             if (_gapFiller is not null)
             {
+                await _gapFiller.ImportHistoryAsync(_options.Symbol, _options.Interval, cancellationToken).ConfigureAwait(false);
                 await _gapFiller.FillRecentGapsAsync(_options.Symbol, _options.Interval, cancellationToken).ConfigureAwait(false);
             }
 

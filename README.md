@@ -11,6 +11,11 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 5 — Backtester.** Simulador por eventos sin look-ahead (decisión al cierre, ejecución a la apertura
+siguiente), con comisiones, spread, slippage, SL/TP conservadores, tamaño por riesgo, curva de equity, drawdown y
+métricas; resultados reproducibles. Reglas: [`docs/BACKTESTING.md`](docs/BACKTESTING.md). Aún no hay estrategia
+real (Fase 6).
+
 **Fase 4 — Features.** Sobre la base de la Fase 3, OMEGA calcula 16 features (retornos, SMA/EMA, RSI, ATR,
 MACD, volatilidad, volumen, z-score de volumen, distancia a la EMA, ADX) sin mirar al futuro, versionados y
 verificados contra una implementación independiente. Catálogo: [`docs/FEATURES.md`](docs/FEATURES.md).
@@ -95,6 +100,15 @@ SELECT occurred_at, event_type, severity, message FROM system_events ORDER BY id
 Fuera de Development (`Database:ApplyMigrationsOnStartup=false`), si hay migraciones pendientes el Worker no
 arranca y lo indica.
 
+**Histórico para backtests.** Para importar velas cerradas desde una fecha (una sola vez; es idempotente y se
+reanuda si se interrumpe):
+
+```bash
+dotnet run --project src/Omega.Worker -- --MarketData:Backfill:HistoryStart=2025-01-01T00:00:00Z
+```
+
+Un año de velas de 5 m son ~105 000 velas (~106 peticiones REST de peso 2).
+
 ## Estructura
 
 ```text
@@ -135,4 +149,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md)
 * [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md)
 * [`docs/FEATURES.md`](docs/FEATURES.md)
+* [`docs/BACKTESTING.md`](docs/BACKTESTING.md)
 * [`docs/decisions/`](docs/decisions/)

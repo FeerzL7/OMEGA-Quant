@@ -60,6 +60,17 @@ public class CandleGapQueryTests : DatabaseTest
         Assert.Equal([new CandleGap(At(1), 4)], await store.FindGapsAsync("ETHUSDT", CandleInterval.FiveMinutes, At(0), At(10), CancellationToken.None));
     }
 
+    [DatabaseFact]
+    public async Task Earliest_and_latest_candles_are_per_symbol()
+    {
+        var store = await StoreWithAsync("BTCUSDT", 4, 2, 9);
+        await store.SaveAsync(Candle("ETHUSDT", 0), "binance-spot-ws", Start, CancellationToken.None);
+
+        Assert.Equal(At(2), (await store.GetEarliestAsync("BTCUSDT", CandleInterval.FiveMinutes, CancellationToken.None))!.OpenTimeUtc);
+        Assert.Equal(At(9), (await store.GetLatestAsync("BTCUSDT", CandleInterval.FiveMinutes, CancellationToken.None))!.OpenTimeUtc);
+        Assert.Null(await store.GetEarliestAsync("SOLUSDT", CandleInterval.FiveMinutes, CancellationToken.None));
+    }
+
     private async Task<PostgresCandleStore> StoreWithAsync(string symbol, params int[] indices)
     {
         await new DatabaseMigrator(DataSource, NullLogger<DatabaseMigrator>.Instance)
