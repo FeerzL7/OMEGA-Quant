@@ -1,6 +1,6 @@
 # Arquitectura de OMEGA Quant
 
-Estado: Fase 6 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
+Estado: Fase 7 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
 en las fases siguientes. Las decisiones mayores están en [`decisions/`](decisions/) y en
 [`DECISION_LOG.md`](DECISION_LOG.md).
 
@@ -30,10 +30,10 @@ atraviesa por fuera.**
 | `Omega.Strategy`       | Librería            | Inferencia, probabilidad, calibración, régimen, valor esperado, señales. No define tamaño de posición. | `IStrategy`; estrategia base `baseline-ema-trend` y benchmark `buy-and-hold` (ADR-010) |
 | `Omega.Risk`           | Librería            | Límites, tamaño de posición, exposición, drawdown, rechazo de operaciones.       | Vacío |
 | `Omega.Execution`      | Librería            | Órdenes, ciclo de vida, proveedores de ejecución, filtros del exchange.          | Vacío |
-| `Omega.Backtesting`    | Librería            | Simulación histórica, costos, métricas, curva de equity.                         | `BacktestEngine`, costos, tamaño, métricas, estadísticas, `IBacktestRunStore` (ADR-005, ADR-010) |
-| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta, relleno de huecos, estado de mercado, monitor de frescura, `FeatureService`, `BacktestService` |
+| `Omega.Backtesting`    | Librería            | Simulación histórica, costos, métricas, curva de equity.                         | `BacktestEngine`, costos, tamaño, métricas, estadísticas, `IBacktestRunStore`, `TripleBarrierLabeler` (ADR-005, ADR-010, ADR-004) |
+| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta, relleno de huecos, estado de mercado, monitor de frescura, `FeatureService`, `BacktestService`, `DatasetBuilder` |
 | `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, repositorios de velas, eventos y backtests (ADR-002); composición compartida |
-| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state`, `/api/features/catalog`, `/api/market/{symbol}/{interval}/features/latest`, `/api/strategies`, `/api/backtests` |
+| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state`, `/api/features/catalog`, `/api/market/{symbol}/{interval}/features/latest`, `/api/strategies`, `/api/backtests`, `/api/datasets` |
 | `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel placeholder sin datos |
 | `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones, aloja la ingesta y el monitor de frescura |
 
@@ -144,7 +144,19 @@ Detalle y justificación en [ADR-003](decisions/ADR-003-binance.md).
 * `ReadEventsAsync` recibe la última vela conocida (la última persistida): no la repite y reporta como hueco lo
   que falte desde ella, también entre reinicios.
 
-## 7.2 Estrategia base y evaluación (Fase 6)
+## 7.2 Machine learning (Fase 7)
+
+Decisiones en [ADR-004](decisions/ADR-004-ml-python-onnx.md); guía en [MACHINE_LEARNING.md](MACHINE_LEARNING.md).
+
+* C# es la única implementación de features y etiquetas. `DatasetBuilder` (Application) exporta
+  `omega-dataset-v1` (CSV + manifiesto con hash) por `POST /api/datasets`; `TripleBarrierLabeler` (Backtesting)
+  usa las reglas del backtester.
+* `research/ml/omega_ml` (Python, fuera de la solución .NET): verificación del dataset, walk-forward con purging,
+  modelos (LR → RF → LightGBM), métricas contra referencia y contra la regla base, registro de experimentos y
+  exportación ONNX con paridad exacta.
+* La inferencia ONNX en C# llegará cuando un modelo participe en decisiones (Fases 9 y 12).
+
+## 7.3 Estrategia base y evaluación (Fase 6)
 
 Decisiones en [ADR-010](decisions/ADR-010-baseline-and-evaluation.md); protocolo en [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md).
 
@@ -155,7 +167,7 @@ Decisiones en [ADR-010](decisions/ADR-010-baseline-and-evaluation.md); protocolo
 * API: `POST /api/backtests`, `GET /api/backtests`, `GET /api/backtests/{id}`, `GET /api/strategies`. Solo lee
   velas y escribe el registro del experimento; no toca el exchange.
 
-## 7.3 Backtesting (Fase 5)
+## 7.4 Backtesting (Fase 5)
 
 Reglas en [BACKTESTING.md](BACKTESTING.md); decisiones en [ADR-005](decisions/ADR-005-backtesting.md).
 
@@ -165,7 +177,7 @@ Reglas en [BACKTESTING.md](BACKTESTING.md); decisiones en [ADR-005](decisions/AD
 * El modelo de fills se extraerá detrás de `IExecutionProvider` en la Fase 12.
 * Carga histórica opcional al arrancar el Worker (`MarketData:Backfill:HistoryStart`).
 
-## 7.4 Features (Fase 4)
+## 7.5 Features (Fase 4)
 
 Detalle en [ADR-009](decisions/ADR-009-feature-engine.md) y catálogo en [FEATURES.md](FEATURES.md).
 
@@ -176,7 +188,7 @@ Detalle en [ADR-009](decisions/ADR-009-feature-engine.md) y catálogo en [FEATUR
 * `ComputeSeries` produce un vector por vela para backtests y datasets (un hueco reinicia el calentamiento).
 * Los features no se persisten: se recalculan desde las velas.
 
-## 7.5 Estado de mercado y relleno de huecos (Fase 3)
+## 7.6 Estado de mercado y relleno de huecos (Fase 3)
 
 Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfill.md).
 
@@ -187,7 +199,7 @@ Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfil
 * `CLOCK_SKEW_DETECTED` cuando el reloj local va atrasado respecto al exchange.
 * Agregación de velas: no implementada (no requerida todavía).
 
-## 7.6 Persistencia (Fase 2)
+## 7.7 Persistencia (Fase 2)
 
 Detalle y justificación en [ADR-002](decisions/ADR-002-postgresql.md).
 

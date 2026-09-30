@@ -53,6 +53,12 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-044  | 2026-09-30 | Significancia por operación: estadístico t e IC 95 % bootstrap (10 000, semilla fija); mínimo orientativo de 30 operaciones. | Adoptada en Fase 6 | [BACKTESTING.md](BACKTESTING.md) |
 | D-045  | 2026-09-30 | Registro de backtests en `backtest_runs` (migración 0002, JSON completo, equity diaria); aviso al reevaluar un `holdout` (cualquier etiqueta o costos cuentan como mirada). | Adoptada en Fase 6 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) |
 | D-046  | 2026-09-30 | Backtests como comando de la API (`POST /api/backtests`, síncrono, hasta 3 años). | Adoptada en Fase 6 | [README](../README.md) |
+| D-047  | 2026-09-30 | Features y etiquetas solo en C#; Python consume `omega-dataset-v1` (CSV + manifiesto, id = SHA-256) exportado por `POST /api/datasets`. | Aceptada (delegada por el propietario) | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
+| D-048  | 2026-09-30 | Etiquetas triple barrera con las reglas del backtester (2·ATR / 3·ATR / 48 velas, SL primero); objetivo binario TP_FIRST. | Adoptada en Fase 7 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
+| D-049  | 2026-09-30 | Entradas del modelo: 8 features sin escala de `features-v1`. | Adoptada en Fase 7 | [MACHINE_LEARNING.md](MACHINE_LEARNING.md) |
+| D-050  | 2026-09-30 | Walk-forward expansivo con purging; holdout solo con `--evaluate-holdout`, contado; hiperparámetros fijos sin búsqueda. | Adoptada en Fase 7 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
+| D-051  | 2026-09-30 | Modelos en ONNX, registrados solo con paridad exacta (10⁻⁶) en todo el desarrollo; sklearn con entradas `float64`; LightGBM evaluado pero no registrado mientras su exportación no sea exacta. | Adoptada en Fase 7 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
+| D-052  | 2026-09-30 | La Fase 7 mide poder predictivo (log loss, Brier, AUC, precisión a igual cobertura); calibración en la Fase 8 y valor económico en la Fase 9. | Adoptada en Fase 7 | [MACHINE_LEARNING.md](MACHINE_LEARNING.md) |
 
 ## ADRs
 
@@ -61,7 +67,7 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | ADR-001 | .NET | No redactado (ver D-001) |
 | [ADR-002](decisions/ADR-002-postgresql.md) | Persistencia en PostgreSQL | Aceptado |
 | [ADR-003](decisions/ADR-003-binance.md) | Datos de mercado de Binance Spot | Aceptado |
-| ADR-004 | ML con Python y ONNX | No redactado (Fase 7) |
+| [ADR-004](decisions/ADR-004-ml-python-onnx.md) | ML con Python y ONNX | Aceptado |
 | [ADR-005](decisions/ADR-005-backtesting.md) | Backtesting | Aceptado |
 | [ADR-006](decisions/ADR-006-blazor-ui.md) | UI con Blazor | Aceptado |
 | ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Omega.Application.Backtesting;
 using Omega.Application.Features;
 using Omega.Application.MarketData;
+using Omega.Application.Research;
 using Omega.Core.Configuration;
 using Omega.Backtesting;
 using Omega.Core.MarketData;
@@ -34,6 +35,13 @@ builder.Services.AddSingleton(services => new BacktestService(
     services.GetRequiredService<FeatureEngine>(),
     services.GetRequiredService<TimeProvider>()));
 
+builder.Services.AddSingleton(services => new DatasetBuilder(
+    services.GetRequiredService<ICandleStore>(), services.GetRequiredService<FeatureEngine>(), services.GetRequiredService<TimeProvider>()));
+
+// Research datasets go to research/datasets (ignored by git) unless configured otherwise.
+builder.Services.AddSingleton(new ResearchPaths(Path.GetFullPath(
+    configuration["Research:DatasetsDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "..", "..", "research", "datasets"))));
+
 // Enums as names in every response (readable, stable across enum reordering).
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -56,6 +64,7 @@ app.MapSystemEndpoints();
 app.MapMarketEndpoints();
 app.MapFeatureEndpoints();
 app.MapBacktestEndpoints();
+app.MapDatasetEndpoints();
 
 await app.RunAsync();
 return 0;

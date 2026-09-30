@@ -20,8 +20,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 4    | Feature Engine                      | **Completada** |
 | 5    | Backtester                          | **Completada** |
 | 6    | Baseline Strategy                   | **Completada** |
-| 7    | Machine Learning                    | Siguiente     |
-| 8    | Probability Calibration             | Pendiente     |
+| 7    | Machine Learning                    | **Completada** |
+| 8    | Probability Calibration             | Siguiente     |
 | 9    | Expected Value                      | Pendiente     |
 | 10   | Risk Engine                         | Pendiente     |
 | 11   | Monte Carlo                         | Pendiente     |
@@ -86,7 +86,15 @@ siguiente sin instrucción del propietario.
   periodos `development` y `holdout`.
 * Para la Fase 7: el objetivo triple-barrier debe usar las mismas barreras que la base (2·ATR, 3·ATR, 48 velas)
   y los mismos periodos, y los modelos se evaluarán con `BacktestService` contra `baseline-ema-trend` y
-  `buy-and-hold`. ADR-004 (ML con Python y ONNX) debe redactarse al inicio de esa fase.
+  `buy-and-hold`. ADR-004 (ML con Python y ONNX) debe redactarse al inicio de esa fase. *(Hecho.)*
+
+### Notas de la Fase 7
+
+* Decisiones: [ADR-004](decisions/ADR-004-ml-python-onnx.md). Guía: [MACHINE_LEARNING.md](MACHINE_LEARNING.md).
+* Para la Fase 8: la calibración debe ajustarse sobre `oos_predictions.csv` (predicciones fuera de muestra del
+  walk-forward), nunca sobre predicciones del conjunto de entrenamiento.
+* Pendiente: inferencia ONNX en C# (Fase 9); decidir qué hacer con LightGBM si resulta el mejor modelo
+  (su exportación ONNX no es exacta).
 
 ---
 

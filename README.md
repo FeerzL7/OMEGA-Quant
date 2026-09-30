@@ -11,6 +11,11 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 7 — Machine learning.** Datasets con features y etiquetas triple barrera calculados por el propio
+sistema (`POST /api/datasets`) y pipeline de investigación en Python (`research/ml`): validación cronológica con
+purging, regresión logística, Random Forest y LightGBM, comparación con la estrategia base y exportación ONNX.
+Guía: [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md).
+
 **Fase 6 — Estrategia base.** Benchmark sin ML (`baseline-ema-trend`) y referencia `buy-and-hold`, evaluables
 por la API con costos, significancia estadística y registro de cada ejecución. Protocolo:
 [`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md).
@@ -84,6 +89,8 @@ curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/j
   Opcionales para estrés de costos: `feeRate`, `spreadBps`, `slippageBps`. La respuesta incluye métricas,
   estadísticas, operaciones, equity diaria y avisos (por ejemplo, si un `holdout` ya fue evaluado).
 * `GET /api/backtests` y `GET /api/backtests/{id}`: historial de ejecuciones y detalle.
+* `POST /api/datasets`: exporta un dataset de investigación (features + etiquetas) a `research/datasets/<id>/`.
+  Ver [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md).
 * `GET /api/features/catalog`: conjunto de features activo (versión, hash y ficha de cada feature).
 * `GET /api/market/BTCUSDT/5m/features/latest`: features de la última vela cerrada guardada (`null` mientras se
   calientan; 422 si falta una vela en la ventana necesaria).
@@ -167,4 +174,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/FEATURES.md`](docs/FEATURES.md)
 * [`docs/BACKTESTING.md`](docs/BACKTESTING.md)
 * [`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md)
+* [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md)
 * [`docs/decisions/`](docs/decisions/)

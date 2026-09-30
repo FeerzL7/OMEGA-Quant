@@ -506,6 +506,9 @@ research/datasets/*
 research/models/*
 !research/models/.gitkeep
 
+# Experiment records (experiment.json) are versioned; their bulky, reproducible outputs are not.
+research/experiments/*/*.csv
+
 # Python research environment (Phase 7+)
 __pycache__/
 *.py[cod]
