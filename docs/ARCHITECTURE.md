@@ -1,6 +1,6 @@
 # Arquitectura de OMEGA Quant
 
-Estado: Fase 3 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
+Estado: Fase 4 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
 en las fases siguientes. Las decisiones mayores están en [`decisions/`](decisions/) y en
 [`DECISION_LOG.md`](DECISION_LOG.md).
 
@@ -26,14 +26,14 @@ atraviesa por fuera.**
 |------------------------|---------------------|----------------------------------------------------------------------------------|---------------------|
 | `Omega.Core`           | Librería            | Entidades, value objects, enums, contratos y reglas de dominio fundamentales.     | `TradingMode`, `SignalDirection`, `Result`/`Error`, `TradingOptions`, `Candle`, `CandleInterval`, `SystemEvent`, `MarketState` + `MarketStateEvaluator`, contratos de persistencia (`ICandleStore`, `ISystemEventStore`), `ExponentialBackoff` |
 | `Omega.MarketData`     | Librería            | Conexión a datos de mercado de Binance, normalización, velas, validación.        | Stream de velas cerradas y fuente REST histórica de Binance Spot (ADR-003, ADR-008) |
-| `Omega.Features`       | Librería            | Cálculo y validación de features e indicadores.                                  | Vacío |
+| `Omega.Features`       | Librería            | Cálculo y validación de features e indicadores.                                  | `FeatureEngine`, conjunto `features-v1` (16 features, ADR-009) |
 | `Omega.Strategy`       | Librería            | Inferencia, probabilidad, calibración, régimen, valor esperado, señales. No define tamaño de posición. | Vacío |
 | `Omega.Risk`           | Librería            | Límites, tamaño de posición, exposición, drawdown, rechazo de operaciones.       | Vacío |
 | `Omega.Execution`      | Librería            | Órdenes, ciclo de vida, proveedores de ejecución, filtros del exchange.          | Vacío |
 | `Omega.Backtesting`    | Librería            | Simulación histórica, costos, métricas, curva de equity.                         | Vacío |
-| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta (stream → persistencia), relleno de huecos, estado de mercado y monitor de frescura |
+| `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta, relleno de huecos, estado de mercado, monitor de frescura y `FeatureService` |
 | `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, repositorios (ADR-002); composición compartida de persistencia y opciones validadas |
-| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state` |
+| `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state`, `/api/features/catalog`, `/api/market/{symbol}/{interval}/features/latest` |
 | `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel placeholder sin datos |
 | `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones, aloja la ingesta y el monitor de frescura |
 
@@ -53,7 +53,7 @@ Omega.Api ────────┤
 Omega.Worker ─────┘
 
 Omega.Infrastructure (+ Microsoft.Extensions.Options.ConfigurationExtensions: composición compartida)
-Omega.Application ──► Omega.MarketData, Omega.Core
+Omega.Application ──► Omega.MarketData, Omega.Features, Omega.Core
 Omega.Worker ───────► Omega.Application, Omega.MarketData, Omega.Infrastructure   (raíz de composición)
 Omega.Api ──────────► Omega.Application, Omega.Infrastructure                     (raíz de composición)
 
@@ -142,7 +142,18 @@ Detalle y justificación en [ADR-003](decisions/ADR-003-binance.md).
 * `ReadEventsAsync` recibe la última vela conocida (la última persistida): no la repite y reporta como hueco lo
   que falte desde ella, también entre reinicios.
 
-## 7.2 Estado de mercado y relleno de huecos (Fase 3)
+## 7.2 Features (Fase 4)
+
+Detalle en [ADR-009](decisions/ADR-009-feature-engine.md) y catálogo en [FEATURES.md](FEATURES.md).
+
+* `FeatureEngine` calcula un `FeatureSet` versionado (`features-v1`, hash SHA-256) sobre velas cerradas. Cada
+  feature usa exactamente sus `Lookback` velas terminando en *t* (sin estado, idéntico en backtest y en vivo).
+* Ventana contigua obligatoria; `null` durante el calentamiento o si el valor no está definido.
+* `FeatureVector.AvailableAtUtc` = cierre de la vela *t*: usarlo antes es look-ahead.
+* `ComputeSeries` produce un vector por vela para backtests y datasets (un hueco reinicia el calentamiento).
+* Los features no se persisten: se recalculan desde las velas.
+
+## 7.3 Estado de mercado y relleno de huecos (Fase 3)
 
 Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfill.md).
 
@@ -153,7 +164,7 @@ Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfil
 * `CLOCK_SKEW_DETECTED` cuando el reloj local va atrasado respecto al exchange.
 * Agregación de velas: no implementada (no requerida todavía).
 
-## 7.3 Persistencia (Fase 2)
+## 7.4 Persistencia (Fase 2)
 
 Detalle y justificación en [ADR-002](decisions/ADR-002-postgresql.md).
 

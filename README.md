@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 4 — Features.** Sobre la base de la Fase 3, OMEGA calcula 16 features (retornos, SMA/EMA, RSI, ATR,
+MACD, volatilidad, volumen, z-score de volumen, distancia a la EMA, ADX) sin mirar al futuro, versionados y
+verificados contra una implementación independiente. Catálogo: [`docs/FEATURES.md`](docs/FEATURES.md).
+
 **Fase 3 — Estado de mercado.** El Worker recibe en tiempo real las velas **cerradas** de BTCUSDT 5m desde
 Binance Spot (solo datos públicos de mercado), las guarda en PostgreSQL, **rellena los huecos** desde el
 histórico REST de Binance y vigila la frescura de los datos. La API expone el estado de mercado (frescura,
@@ -59,6 +63,9 @@ Endpoints actuales de la API:
 
 * `GET /health`: liveness del proceso. No verifica Binance, base de datos ni modelos (no existen todavía).
 * `GET /api/system/status`: servicio, modo de trading configurado y hora UTC del servidor.
+* `GET /api/features/catalog`: conjunto de features activo (versión, hash y ficha de cada feature).
+* `GET /api/market/BTCUSDT/5m/features/latest`: features de la última vela cerrada guardada (`null` mientras se
+  calientan; 422 si falta una vela en la ventana necesaria).
 * `GET /api/market/BTCUSDT/5m/state`: estado de mercado (última vela cerrada, frescura `FRESH`/`STALE`/`NO_DATA`,
   huecos en las últimas 24 h e `isReliable`). La API también necesita la cadena de conexión:
 
@@ -127,4 +134,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 * [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md)
 * [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md)
+* [`docs/FEATURES.md`](docs/FEATURES.md)
 * [`docs/decisions/`](docs/decisions/)

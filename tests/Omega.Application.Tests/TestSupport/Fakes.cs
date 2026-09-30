@@ -182,7 +182,7 @@ internal static class TestCandles
 
         return Omega.Core.MarketData.Candle.Create(
             "BTCUSDT", CandleInterval.FiveMinutes, open, open.AddMinutes(5).AddMilliseconds(-1),
-            100m, 101m, 99m, close, 12.5m, 1250m, 42).Value;
+            100m, 101m, 99m, close, 12.5m + (index % 5), 1250m, 42).Value;
     }
 
     public static CandleClosedEvent Closed(int index, decimal close = 100.5m) =>

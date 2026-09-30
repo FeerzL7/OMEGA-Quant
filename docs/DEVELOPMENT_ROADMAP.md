@@ -17,8 +17,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 1    | Binance Market Data                 | **Completada** |
 | 2    | Persistence                         | **Completada** |
 | 3    | Market State and Candle Engine      | **Completada** |
-| 4    | Feature Engine                      | Siguiente     |
-| 5    | Backtester                          | Pendiente     |
+| 4    | Feature Engine                      | **Completada** |
+| 5    | Backtester                          | Siguiente     |
 | 6    | Baseline Strategy                   | Pendiente     |
 | 7    | Machine Learning                    | Pendiente     |
 | 8    | Probability Calibration             | Pendiente     |
@@ -62,6 +62,13 @@ siguiente sin instrucción del propietario.
 * Agregación de velas no implementada: no la requiere ninguna fase todavía (D-028).
 * `MarketState.IsReliable` es la señal de integridad que Strategy (Fases 6-9) y Risk (Fase 10) deberán respetar.
 * Pendiente de revisar con datos reales: el periodo de gracia de frescura (60 s) y la latencia típica de las velas.
+
+### Notas de la Fase 4
+
+* Diseño: [ADR-009](decisions/ADR-009-feature-engine.md). Catálogo con las 6 fichas por feature: [FEATURES.md](FEATURES.md).
+* `ComputeSeries` es la entrada natural del backtester (Fase 5): un vector por vela, sin look-ahead.
+* Recomendación antes de la Fase 5: una **carga histórica** de velas (REST) para tener meses de datos sobre los
+  que hacer backtests; hoy el relleno solo cubre huecos de los últimos 7 días.
 
 ---
 

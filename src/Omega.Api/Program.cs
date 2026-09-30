@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Options;
 using Omega.Api.Endpoints;
+using Omega.Application.Features;
 using Omega.Application.MarketData;
 using Omega.Core.Configuration;
 using Omega.Core.MarketData;
+using Omega.Features;
 using Omega.Infrastructure.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,10 @@ builder.Services.AddSingleton(services => new MarketStateService(
     services.GetRequiredService<ICandleStore>(),
     services.GetRequiredService<IOptions<MarketStateOptions>>().Value,
     services.GetRequiredService<TimeProvider>()));
+
+builder.Services.AddSingleton(new FeatureEngine(FeatureSets.V1()));
+builder.Services.AddSingleton(services => new FeatureService(
+    services.GetRequiredService<ICandleStore>(), services.GetRequiredService<FeatureEngine>()));
 
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
@@ -36,6 +42,7 @@ app.UseHttpsRedirection();
 app.MapHealthChecks("/health");
 app.MapSystemEndpoints();
 app.MapMarketEndpoints();
+app.MapFeatureEndpoints();
 
 await app.RunAsync();
 return 0;

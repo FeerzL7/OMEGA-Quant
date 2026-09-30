@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Omega.Infrastructure\Omega.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Omega.Features\Omega.Features.csproj" />
   </ItemGroup>
 
 </Project>

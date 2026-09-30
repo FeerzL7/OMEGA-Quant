@@ -37,6 +37,11 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-028  | 2026-09-29 | Agregación de velas: no se implementa hasta que una fase requiera otro intervalo. | Adoptada en Fase 3 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) |
 | D-029  | 2026-09-29 | La API accede a PostgreSQL (solo lectura en esta fase) y expone `GET /api/market/{symbol}/{interval}/state`. Composición de persistencia y opciones validadas centralizada en `Omega.Infrastructure`. | Adoptada en Fase 3 | [ARCHITECTURE §7](ARCHITECTURE.md) |
 | D-030  | 2026-09-29 | Numeración: ADR-008 para esta fase, porque ADR-004 queda reservado a ML según el roadmap. | Adoptada en Fase 3 | — |
+| D-031  | 2026-09-29 | Features sin estado sobre ventana fija (`Lookback` exacto); promedios recursivos inicializados dentro de la ventana (EMA 5·N, Wilder 1 + 11·N). | Aceptada (delegada por el propietario) | [ADR-009](decisions/ADR-009-feature-engine.md) |
+| D-032  | 2026-09-29 | Ventana contigua obligatoria; `null` para calentamiento e indefinidos; nunca NaN/infinito. | Adoptada en Fase 4 | [ADR-009](decisions/ADR-009-feature-engine.md) |
+| D-033  | 2026-09-29 | Conjunto `features-v1` (16 features) versionado con hash SHA-256 de sus definiciones. Parámetros estándar, no optimizados. | Adoptada en Fase 4 | [FEATURES.md](FEATURES.md) |
+| D-034  | 2026-09-29 | Implementación canónica de features en C#; verificada contra una implementación independiente en Python. Los features no se persisten. | Adoptada en Fase 4 | [ADR-009](decisions/ADR-009-feature-engine.md) |
+| D-035  | 2026-09-29 | Endpoints `GET /api/features/catalog` y `GET /api/market/{symbol}/{interval}/features/latest` (422 si la ventana tiene un hueco). | Adoptada en Fase 4 | [README](../README.md) |
 
 ## ADRs
 
@@ -50,3 +55,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-006](decisions/ADR-006-blazor-ui.md) | UI con Blazor | Aceptado |
 | ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |
 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |
+| [ADR-009](decisions/ADR-009-feature-engine.md) | Motor de features | Aceptado |

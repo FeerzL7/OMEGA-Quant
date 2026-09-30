@@ -4,4 +4,9 @@
     <ProjectReference Include="..\..\src\Omega.Features\Omega.Features.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Reference data produced by TestData/generate_reference.py (independent implementation). -->
+    <EmbeddedResource Include="TestData\*.csv" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
