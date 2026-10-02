@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 12 — Paper trading.** El Worker en modo `Paper` ejecuta el pipeline completo sobre cada vela cerrada (features →
+estrategia → riesgo → decisión → ejecución simulada → diario), con las mismas reglas de llenado que el backtester,
+estado persistido y kill switch operable desde la API. Ver [`docs/PAPER_TRADING.md`](docs/PAPER_TRADING.md).
+
 **Fase 11 — Monte Carlo.** Análisis de escenarios sobre las operaciones de un backtest (bootstrap, bloques,
 permutación, estrés de costos): rango de resultados, drawdown, rachas, ruina y probabilidad de que salte el kill
 switch. No es una predicción. Ver [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md).
@@ -106,6 +110,9 @@ curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/j
 * `GET /api/backtests` y `GET /api/backtests/{id}`: historial de ejecuciones y detalle.
 * `POST /api/backtests/{id}/monte-carlo`: escenarios sobre las operaciones de ese backtest (ver
   [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)).
+* `GET /api/paper/sessions` (y `/{name}`, `/trades`, `/decisions`, `/orders`, `/commands`): sesiones de paper trading.
+  `POST /api/paper/sessions/{name}/kill-switch` activa o rearma el kill switch (motivo y autor obligatorios).
+  **La API no tiene autenticación: exponla solo en `localhost`.**
 * `GET /api/risk/limits`: política de riesgo vigente (sección `Risk` de la configuración). En
   `POST /api/backtests`, `"risk": { "maxDailyLoss": 0.01, ... }` cambia límites solo para esa ejecución.
 * `GET /api/models`: modelos registrados y si están listos para el valor esperado (ONNX, calibración y perfil).
@@ -181,6 +188,8 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * Modo de trading: sección `Trading`, clave `Mode` (`Backtest`, `Paper`, `Testnet`, `Live`).
   Si falta, el valor es `Backtest`. Un valor inválido impide que la API y el Worker arranquen.
   Se puede sobrescribir con variables de entorno, por ejemplo `Trading__Mode=Paper`.
+  En el Worker: `Backtest` solo ingiere datos; `Paper` añade el paper trading (sección `Paper`);
+  `Testnet` y `Live` hacen que se niegue a arrancar, porque su ejecución aún no existe (fases 14-16).
 * Los secretos **nunca** se versionan. En desarrollo se usarán `dotnet user-secrets`; en otros entornos,
   variables de entorno o un gestor de secretos. `.gitignore` excluye `.env*`, `secrets.json`,
   `appsettings.*.local.json` y certificados. El único secreto hasta ahora es la contraseña de PostgreSQL (user-secrets, variable de entorno o `docker/.env`).
@@ -197,4 +206,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md)
 * [`docs/RISK_MODEL.md`](docs/RISK_MODEL.md)
 * [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)
+* [`docs/PAPER_TRADING.md`](docs/PAPER_TRADING.md)
 * [`docs/decisions/`](docs/decisions/)

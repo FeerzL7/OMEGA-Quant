@@ -54,6 +54,12 @@ public sealed record Signal
     /// <summary>Human-readable reason for the decision (logged and shown in the dashboard).</summary>
     public string? Explanation { get; }
 
+    /// <summary>
+    /// Structured numbers behind the decision (for example raw and calibrated probability, expected value), for
+    /// journals and monitoring (CLAUDE.md §27). Empty when the strategy reports none.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> Metrics { get; init; } = new Dictionary<string, double>();
+
     public static Signal Long(decimal stopLossPrice, decimal? takeProfitPrice = null, string? explanation = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(stopLossPrice, 0m);

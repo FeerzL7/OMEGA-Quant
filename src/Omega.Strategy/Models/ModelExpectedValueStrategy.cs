@@ -72,9 +72,19 @@ public sealed class ModelExpectedValueStrategy(
         var explanation = string.Create(CultureInfo.InvariantCulture,
             $"P raw {raw:0.0000}, calibrated {calibrated:0.0000}; EV {ev.ExpectedReturn:+0.00000;-0.00000} (gain {ev.Gain:0.00000}, loss {ev.Loss:0.00000}, costs {ev.Costs:0.00000}).");
 
+        var metrics = new Dictionary<string, double>
+        {
+            ["raw_probability"] = raw,
+            ["calibrated_probability"] = calibrated,
+            ["expected_return"] = ev.ExpectedReturn,
+            ["gain"] = ev.Gain,
+            ["loss"] = ev.Loss,
+            ["costs"] = ev.Costs,
+        };
+
         if (ev.ExpectedReturn <= minExpectedReturn)
         {
-            return Signal.NoTrade(NoTradeReason.ExpectedValueTooLow, explanation);
+            return Signal.NoTrade(NoTradeReason.ExpectedValueTooLow, explanation) with { Metrics = metrics };
         }
 
         var stop = close - ((decimal)stopAtr * (decimal)atr);
@@ -83,6 +93,6 @@ public sealed class ModelExpectedValueStrategy(
             return Signal.NoTrade(NoTradeReason.InvalidMarketData, "The stop loss would not be positive.");
         }
 
-        return Signal.Long(stop, close + ((decimal)targetAtr * (decimal)atr), explanation);
+        return Signal.Long(stop, close + ((decimal)targetAtr * (decimal)atr), explanation) with { Metrics = metrics };
     }
 }

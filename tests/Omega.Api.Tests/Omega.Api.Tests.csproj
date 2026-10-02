@@ -4,4 +4,9 @@
     <ProjectReference Include="..\..\src\Omega.Api\Omega.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ExitReason and the shared fill model live in Omega.Execution since Phase 12. -->
+    <Using Include="Omega.Execution" />
+  </ItemGroup>
+
 </Project>

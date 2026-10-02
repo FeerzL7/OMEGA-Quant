@@ -85,6 +85,7 @@ app.MapBacktestEndpoints();
 app.MapDatasetEndpoints();
 app.MapModelEndpoints();
 app.MapRiskEndpoints();
+app.MapPaperEndpoints();
 
 await app.RunAsync();
 return 0;

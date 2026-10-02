@@ -25,8 +25,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 9    | Expected Value                      | **Completada** |
 | 10   | Risk Engine                         | **Completada** |
 | 11   | Monte Carlo                         | **Completada** |
-| 12   | Paper Trading                       | Siguiente     |
-| 13   | Monitoring Dashboard                | Pendiente     |
+| 12   | Paper Trading                       | **Completada** |
+| 13   | Monitoring Dashboard                | Siguiente     |
 | 14   | Testnet                             | Pendiente     |
 | 15   | Live Readiness                      | Pendiente     |
 | 16   | Controlled Live                     | Pendiente     |
@@ -129,7 +129,17 @@ siguiente sin instrucción del propietario.
 * La Fase 12 es la primera que ejecuta el pipeline completo en tiempo real: datos → features → modelo → calibración →
   EV → riesgo → decisión → ejecución simulada (paper) → diario. Implica decisiones de arquitectura (estado persistido
   del riesgo y de las posiciones, `IExecutionProvider`, ciclo de vida de órdenes, ADR-007 si el panel necesita tiempo
-  real) que se plantearán al inicio de la fase.
+  real) que se plantearán al inicio de la fase. *(Hecho.)*
+
+### Notas de la Fase 12
+
+* Decisiones: [ADR-015](decisions/ADR-015-paper-trading.md). Guía: [PAPER_TRADING.md](PAPER_TRADING.md).
+* **Pendiente del propietario:** correr una sesión de paper con datos reales de Binance durante un periodo suficiente,
+  con la estrategia y el modelo elegidos fuera de muestra, antes de pensar en Testnet (Fase 14).
+* Para la Fase 13: el panel consume `/api/paper/...`, `/api/backtests`, `/api/risk/limits` y el estado de mercado. La
+  decisión del modo interactivo de Blazor (ADR-006) y del mecanismo de tiempo real (ADR-007) se plantearán al inicio.
+* Riesgo abierto: la API no tiene autenticación y permite rearmar el kill switch; exponerla solo en `localhost` hasta la
+  Fase 15.
 
 ---
 

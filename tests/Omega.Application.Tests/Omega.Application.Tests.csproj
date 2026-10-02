@@ -9,4 +9,9 @@
     <EmbeddedResource Include="..\Omega.Strategy.Tests\TestData\model_package\*" LogicalName="model_package/%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ExitReason and the shared fill model live in Omega.Execution since Phase 12. -->
+    <Using Include="Omega.Execution" />
+  </ItemGroup>
+
 </Project>

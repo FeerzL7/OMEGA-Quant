@@ -29,6 +29,15 @@ public sealed class KillSwitch
         ResetBy = null;
     }
 
+    /// <summary>Restores a persisted state (restart). Not a reset: an active switch stays active.</summary>
+    internal void Restore(bool isActive, string? reason, DateTimeOffset? trippedAtUtc, string? resetBy)
+    {
+        IsActive = isActive;
+        Reason = reason;
+        TrippedAtUtc = trippedAtUtc;
+        ResetBy = resetBy;
+    }
+
     /// <summary>Manual reset. Requires naming who resets it, for the audit trail.</summary>
     public void Reset(string resetBy)
     {

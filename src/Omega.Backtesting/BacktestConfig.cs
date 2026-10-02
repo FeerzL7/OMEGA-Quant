@@ -48,13 +48,12 @@ public sealed record BacktestConfig
     /// <summary>The exchange rules simulated for order quantities.</summary>
     public Omega.Core.Trading.InstrumentFilters Filters => new(QuantityStep, MinQuantity: null, MinNotional);
 
-    internal decimal HalfSpread => SpreadBps / 2m / 10_000m;
+    /// <summary>The execution costs simulated.</summary>
+    public Omega.Core.Trading.TradingCosts Costs => new(FeeRate, SpreadBps, SlippageBps);
 
-    internal decimal Slippage => SlippageBps / 10_000m;
+    /// <summary>Price paid by a market buy whose reference price is <paramref name="price"/> (shared fill model).</summary>
+    internal decimal MarketBuyPrice(decimal price) => Omega.Execution.CandleFillModel.MarketBuyPrice(price, Costs);
 
-    /// <summary>Price paid by a market buy whose reference price is <paramref name="price"/>.</summary>
-    internal decimal MarketBuyPrice(decimal price) => price * (1m + HalfSpread + Slippage);
-
-    /// <summary>Price received by a market sell whose reference price is <paramref name="price"/>.</summary>
-    internal decimal MarketSellPrice(decimal price) => price * (1m - HalfSpread - Slippage);
+    /// <summary>Price received by a market sell whose reference price is <paramref name="price"/> (shared fill model).</summary>
+    internal decimal MarketSellPrice(decimal price) => Omega.Execution.CandleFillModel.MarketSellPrice(price, Costs);
 }

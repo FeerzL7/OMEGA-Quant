@@ -4,6 +4,8 @@
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
     <!-- Every simulated entry is approved and sized by the Risk Engine (Phase 10). -->
     <ProjectReference Include="..\Omega.Risk\Omega.Risk.csproj" />
+    <!-- Fill rules shared with paper trading (Phase 12), so both simulate execution identically. -->
+    <ProjectReference Include="..\Omega.Execution\Omega.Execution.csproj" />
     <ProjectReference Include="..\Omega.Features\Omega.Features.csproj" />
     <ProjectReference Include="..\Omega.Strategy\Omega.Strategy.csproj" />
   </ItemGroup>

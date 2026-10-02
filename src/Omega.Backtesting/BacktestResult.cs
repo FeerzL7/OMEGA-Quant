@@ -3,19 +3,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Omega.Core.MarketData;
 using Omega.Core.Trading;
+using Omega.Execution;
 using Omega.Risk;
 using Omega.Strategy;
 
 namespace Omega.Backtesting;
-
-public enum ExitReason
-{
-    StopLoss = 1,
-    TakeProfit = 2,
-    Signal = 3,
-    TimeLimit = 4,
-    EndOfData = 5,
-}
 
 /// <summary>A completed round trip. Prices are fill prices (costs included); PnL is net of fees.</summary>
 public sealed record BacktestTrade(

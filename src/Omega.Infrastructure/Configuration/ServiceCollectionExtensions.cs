@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICandleStore, PostgresCandleStore>();
         services.AddSingleton<ISystemEventStore, PostgresSystemEventStore>();
         services.AddSingleton<IBacktestRunStore, PostgresBacktestRunStore>();
+        services.AddSingleton<Omega.Execution.Paper.IPaperTradingStore, PostgresPaperTradingStore>();
 
         return services;
     }

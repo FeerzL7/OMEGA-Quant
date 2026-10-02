@@ -181,3 +181,48 @@ public class RiskManagerTests
 
     private static RiskManager Manager(RiskLimits? limits = null) => new(limits ?? RiskLimits.Default, 10_000m, Day1);
 }
+
+public class RiskStateTests
+{
+    private static readonly DateTimeOffset Day1 = new(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly MarketConditions Normal = new(1m, 2m, true, true);
+
+    [Fact]
+    public void A_restored_risk_engine_behaves_exactly_like_the_original()
+    {
+        var limits = new RiskLimits { MaxConsecutiveLosses = 2, MaxDrawdown = 0.10m };
+        var original = new RiskManager(limits, 10_000m, Day1);
+        original.OnEquity(Day1.AddHours(1), 10_500m);
+        original.OnEquity(Day1.AddHours(2), 10_300m);
+        original.OnTradeClosed(-50m);
+        original.OnTradeClosed(-50m);                       // streak block for today
+
+        var restored = RiskManager.Restore(limits, original.Snapshot());
+
+        Assert.Equal(original.Snapshot(), restored.Snapshot());
+        var portfolio = new PortfolioSnapshot(10_300m, 10_300m, 0, 0m);
+        Assert.Equal(original.CheckEntry(portfolio, Normal), restored.CheckEntry(portfolio, Normal));
+
+        // Both evolve identically afterwards: next day unblocks, a 10 % fall from the peak trips the kill switch.
+        foreach (var manager in new[] { original, restored })
+        {
+            manager.OnEquity(Day1.AddDays(1).AddMinutes(5), 9_440m);
+        }
+
+        Assert.Equal(original.Snapshot(), restored.Snapshot());
+        Assert.True(restored.KillSwitch.IsActive);
+    }
+
+    [Fact]
+    public void An_active_kill_switch_survives_a_restart()
+    {
+        var original = new RiskManager(RiskLimits.Default, 10_000m, Day1);
+        original.KillSwitch.Trip("manual: incident", Day1.AddHours(3));
+
+        var restored = RiskManager.Restore(RiskLimits.Default, original.Snapshot());
+
+        Assert.True(restored.KillSwitch.IsActive);
+        Assert.Equal("manual: incident", restored.KillSwitch.Reason);
+        Assert.Equal(RiskCheck.KillSwitch, restored.CheckEntry(new PortfolioSnapshot(10_000m, 10_000m, 0, 0m), Normal).Check);
+    }
+}

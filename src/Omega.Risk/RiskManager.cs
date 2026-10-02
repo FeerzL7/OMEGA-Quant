@@ -3,6 +3,21 @@ using Omega.Core.Trading;
 
 namespace Omega.Risk;
 
+/// <summary>Everything the Risk Engine remembers, so it survives a restart (paper and live trading).</summary>
+public sealed record RiskState(
+    decimal PeakEquity,
+    decimal DayStartEquity,
+    decimal LastEquity,
+    DateOnly Day,
+    bool DailyLossBlocked,
+    string? DailyLossTrigger,
+    bool StreakBlocked,
+    int ConsecutiveLosses,
+    bool KillSwitchActive,
+    string? KillSwitchReason,
+    DateTimeOffset? KillSwitchTrippedAtUtc,
+    string? KillSwitchResetBy);
+
 /// <summary>
 /// Risk Engine (CLAUDE.md §18): independent of any model, it can reject any entry and decides the size of every
 /// position. It keeps the state its limits need (peak equity, start-of-day equity, losing streak, kill switch),
@@ -44,6 +59,29 @@ public sealed class RiskManager
     public int ConsecutiveLosses { get; private set; }
 
     public decimal Drawdown => _lastEquity / PeakEquity - 1m;
+
+    public RiskState Snapshot() => new(
+        PeakEquity, DayStartEquity, _lastEquity, _day, _dailyLossBlocked, _dailyLossTrigger, _streakBlocked, ConsecutiveLosses,
+        KillSwitch.IsActive, KillSwitch.Reason, KillSwitch.TrippedAtUtc, KillSwitch.ResetBy);
+
+    /// <summary>Rebuilds the Risk Engine exactly as it was (limits are the current policy; the state is restored).</summary>
+    public static RiskManager Restore(RiskLimits limits, RiskState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var manager = new RiskManager(limits, state.LastEquity > 0 ? state.LastEquity : 1m, DateTimeOffset.UnixEpoch)
+        {
+            PeakEquity = state.PeakEquity,
+            DayStartEquity = state.DayStartEquity,
+            ConsecutiveLosses = state.ConsecutiveLosses,
+        };
+        manager._lastEquity = state.LastEquity;
+        manager._day = state.Day;
+        manager._dailyLossBlocked = state.DailyLossBlocked;
+        manager._dailyLossTrigger = state.DailyLossTrigger;
+        manager._streakBlocked = state.StreakBlocked;
+        manager.KillSwitch.Restore(state.KillSwitchActive, state.KillSwitchReason, state.KillSwitchTrippedAtUtc, state.KillSwitchResetBy);
+        return manager;
+    }
 
     /// <summary>Marks equity at <paramref name="timeUtc"/> (mark-to-market). Rolls the UTC day and trips the kill switch on maximum drawdown.</summary>
     public void OnEquity(DateTimeOffset timeUtc, decimal equity)

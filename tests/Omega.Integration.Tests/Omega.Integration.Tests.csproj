@@ -9,6 +9,12 @@
     <ProjectReference Include="..\..\src\Omega.Infrastructure\Omega.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Omega.Features\Omega.Features.csproj" />
     <ProjectReference Include="..\..\src\Omega.Backtesting\Omega.Backtesting.csproj" />
+    <ProjectReference Include="..\..\src\Omega.Application\Omega.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ExitReason and the shared fill model live in Omega.Execution since Phase 12. -->
+    <Using Include="Omega.Execution" />
   </ItemGroup>
 
 </Project>

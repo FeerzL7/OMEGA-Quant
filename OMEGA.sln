@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.Application", "src\Om
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.Application.Tests", "tests\Omega.Application.Tests\Omega.Application.Tests.csproj", "{9577E4A0-64B6-46AB-A918-58ED933BC224}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.Execution.Tests", "tests\Omega.Execution.Tests\Omega.Execution.Tests.csproj", "{D0E56FD0-8DAF-4887-A839-804118CD827E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -311,6 +313,18 @@ Global
 		{9577E4A0-64B6-46AB-A918-58ED933BC224}.Release|x64.Build.0 = Release|Any CPU
 		{9577E4A0-64B6-46AB-A918-58ED933BC224}.Release|x86.ActiveCfg = Release|Any CPU
 		{9577E4A0-64B6-46AB-A918-58ED933BC224}.Release|x86.Build.0 = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|x64.Build.0 = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Debug|x86.Build.0 = Debug|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|x64.ActiveCfg = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|x64.Build.0 = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|x86.ActiveCfg = Release|Any CPU
+		{D0E56FD0-8DAF-4887-A839-804118CD827E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -337,5 +351,6 @@ Global
 		{F5E5D0AC-C792-47D2-97AA-9D9BEB88CD36} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{0465B568-9127-488E-8827-0903FD608C39} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{9577E4A0-64B6-46AB-A918-58ED933BC224} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{D0E56FD0-8DAF-4887-A839-804118CD827E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

@@ -75,6 +75,13 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-066  | 2026-10-01 | Monte Carlo sobre operaciones de un backtest (retorno sobre equity previo + fracción comprometida); bootstrap, bloques circulares y permutación; robustez por costos y operaciones perdidas. | Aceptada (delegada por el propietario) | [ADR-014](decisions/ADR-014-monte-carlo.md) |
 | D-067  | 2026-10-01 | Ruina = el equity llegó alguna vez al umbral; probabilidad del kill switch con la política registrada del backtest; drawdowns medidos entre operaciones (cotas inferiores). | Adoptada en Fase 11 | [MONTE_CARLO.md](MONTE_CARLO.md) |
 | D-068  | 2026-10-01 | Monte Carlo determinista por semilla y sin persistencia; avisos obligatorios (no es predicción, pocas operaciones, drawdown intradía, run sin política). | Adoptada en Fase 11 | [ADR-014](decisions/ADR-014-monte-carlo.md) |
+| D-069  | 2026-10-01 | Modelo de llenado compartido (`CandleFillModel`) entre backtester y paper; paridad exacta verificada por test. | Aceptada (confirmada por el propietario) | [ADR-015](decisions/ADR-015-paper-trading.md) |
+| D-070  | 2026-10-01 | Llenados de paper basados en velas cerradas y costos configurados; llenados reales en Testnet. | Aceptada (confirmada por el propietario) | [ADR-015](decisions/ADR-015-paper-trading.md) |
+| D-071  | 2026-10-01 | Ciclo de vida de órdenes con transiciones validadas y eventos con secuencia persistida; `IExecutionProvider` con `SynchronizeAsync`. | Aceptada (confirmada por el propietario) | [ADR-015](decisions/ADR-015-paper-trading.md) |
+| D-072  | 2026-10-01 | Worker con cursor persistido, una transacción por vela, estado del riesgo persistido; velas viejas no abren posiciones. | Aceptada (confirmada por el propietario) | [PAPER_TRADING.md](PAPER_TRADING.md) |
+| D-073  | 2026-10-01 | Kill switch por comandos encolados (motivo y autor obligatorios) aplicados por el Worker. | Aceptada (confirmada por el propietario) | [ADR-015](decisions/ADR-015-paper-trading.md) |
+| D-074  | 2026-10-01 | Guardia de modo (Testnet/Live → código 2) y sesiones de configuración inmutable comparada por significado (código 3). | Aceptada (confirmada por el propietario) | [PAPER_TRADING.md](PAPER_TRADING.md) |
+| D-075  | 2026-10-01 | `Signal.Metrics` para registrar en el diario probabilidad cruda y calibrada y EV como datos estructurados (§27). | Adoptada en Fase 12 | [ADR-015](decisions/ADR-015-paper-trading.md) |
 
 ## ADRs
 
@@ -94,3 +101,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-012](decisions/ADR-012-expected-value.md) | Valor esperado y estrategia guiada por modelo | Aceptado |
 | [ADR-013](decisions/ADR-013-risk-engine.md) | Risk Engine | Aceptado |
 | [ADR-014](decisions/ADR-014-monte-carlo.md) | Monte Carlo para análisis de escenarios | Aceptado |
+| [ADR-015](decisions/ADR-015-paper-trading.md) | Paper trading | Aceptado |

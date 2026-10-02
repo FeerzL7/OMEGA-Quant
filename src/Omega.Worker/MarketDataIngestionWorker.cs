@@ -16,14 +16,15 @@ public sealed partial class MarketDataIngestionWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogStarted(logger, tradingOptions.Value.Mode);
+        var mode = tradingOptions.Value.Mode;
+        LogStarted(logger, mode, mode == TradingMode.Paper ? "market-data ingestion and paper trading" : "market-data ingestion only (no trading)");
         await ingestion.RunAsync(stoppingToken);
         LogStopped(logger);
     }
 
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "OMEGA worker started. Trading mode: {TradingMode}. Ingesting market data only (Phase 3).")]
-    private static partial void LogStarted(ILogger logger, TradingMode tradingMode);
+        Message = "OMEGA worker started. Trading mode: {TradingMode}. Running: {Components}.")]
+    private static partial void LogStarted(ILogger logger, TradingMode tradingMode, string components);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "OMEGA worker stopped.")]
     private static partial void LogStopped(ILogger logger);

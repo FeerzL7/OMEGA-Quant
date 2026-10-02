@@ -2,6 +2,7 @@ using System.Globalization;
 using Omega.Core.MarketData;
 using Omega.Core.Results;
 using Omega.Core.Trading;
+using Omega.Execution;
 using Omega.Risk;
 using Omega.Features;
 using Omega.Strategy;
@@ -283,21 +284,11 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
 
         private void CheckStops(Candle candle, int index, OpenPosition position)
         {
-            if (candle.Open <= position.StopLoss)
+            // Shared with paper trading: gap through the stop at the open, gap through the target at the target,
+            // stop first when both are inside the candle.
+            if (CandleFillModel.CheckProtection(candle, position.StopLoss, position.TakeProfit, config.Costs) is { } fill)
             {
-                Close(candle, index, config.MarketSellPrice(candle.Open), ExitReason.StopLoss); // gap through the stop
-            }
-            else if (position.TakeProfit is { } gapTarget && candle.Open >= gapTarget)
-            {
-                Close(candle, index, gapTarget, ExitReason.TakeProfit); // conservative: no credit for the gap
-            }
-            else if (candle.Low <= position.StopLoss)
-            {
-                Close(candle, index, config.MarketSellPrice(position.StopLoss), ExitReason.StopLoss); // first if both touched
-            }
-            else if (position.TakeProfit is { } target && candle.High >= target)
-            {
-                Close(candle, index, target, ExitReason.TakeProfit);
+                Close(candle, index, fill.Price, fill.Reason);
             }
         }
 

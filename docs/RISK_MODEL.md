@@ -70,6 +70,8 @@ referencia justo antes de enviar la orden (la diferencia es el slippage, ya cobr
 * Bloquea entradas nuevas; las posiciones abiertas conservan su stop. Cerrar a mercado durante un desplome podría
   empeorar la pérdida; si se quiere cerrar todo, será una acción explícita (fase de ejecución).
 * En backtest, una vez activado permanece así el resto de la simulación; el resultado registra cuándo y por qué.
+* En paper trading (Fase 12) su estado se persiste con la sesión, sobrevive a reinicios y se opera con
+  `POST /api/paper/sessions/{name}/kill-switch` (motivo y autor obligatorios; ver [PAPER_TRADING.md](PAPER_TRADING.md)).
 
 ## Días
 

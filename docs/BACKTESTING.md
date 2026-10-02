@@ -83,6 +83,12 @@ Sobre la curva de equity (una observación por cierre de vela) y las operaciones
 El PnL de cada operación es neto: `cantidad × salida − comisión de salida − (cantidad × entrada + comisión de entrada)`,
 con precios de ejecución que ya incluyen spread y slippage.
 
+## Modelo de llenado compartido (Fase 12)
+
+Los precios de mercado con costos y el orden de prioridad dentro de una vela (stop antes que objetivo, gaps) viven en
+`Omega.Execution.CandleFillModel`, usado también por el paper trading. Un test exige que ambos produzcan las mismas
+operaciones sobre las mismas velas.
+
 ## Riesgo (Fase 10)
 
 Cada entrada que pide la estrategia pasa por el Risk Engine ([RISK_MODEL.md](RISK_MODEL.md)): aprobación al cerrar
