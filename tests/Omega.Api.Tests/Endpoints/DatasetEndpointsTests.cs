@@ -50,7 +50,7 @@ public class DatasetEndpointsTests
         Directory.Delete(paths.DatasetsDirectory, recursive: true);
     }
 
-    private static ResearchPaths Paths() => new(Directory.CreateTempSubdirectory("omega-api-datasets-").FullName);
+    private static ResearchPaths Paths() => new(Directory.CreateTempSubdirectory("omega-api-datasets-").FullName, Path.GetTempPath());
 
     private static DatasetBuilder Builder(IReadOnlyList<Candle> candles) =>
         new(new Store(candles), new FeatureEngine(FeatureSets.V1()), TimeProvider.System);

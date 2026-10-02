@@ -22,8 +22,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 6    | Baseline Strategy                   | **Completada** |
 | 7    | Machine Learning                    | **Completada** |
 | 8    | Probability Calibration             | **Completada** |
-| 9    | Expected Value                      | Siguiente     |
-| 10   | Risk Engine                         | Pendiente     |
+| 9    | Expected Value                      | **Completada** |
+| 10   | Risk Engine                         | Siguiente     |
 | 11   | Monte Carlo                         | Pendiente     |
 | 12   | Paper Trading                       | Pendiente     |
 | 13   | Monitoring Dashboard                | Pendiente     |
@@ -101,7 +101,16 @@ siguiente sin instrucción del propietario.
 * Decisiones: [ADR-011](decisions/ADR-011-probability-calibration.md). Uso: [MACHINE_LEARNING.md](MACHINE_LEARNING.md) §5.
 * Para la Fase 9: cargar el paquete `model.onnx` + `calibration.json` en C# (inferencia ONNX), calcular el valor
   esperado con la probabilidad **calibrada** y los costos del backtester, y comparar en backtest contra la
-  estrategia base y buy & hold con el protocolo de evaluación.
+  estrategia base y buy & hold con el protocolo de evaluación. *(Hecho.)*
+
+### Notas de la Fase 9
+
+* Decisiones: [ADR-012](decisions/ADR-012-expected-value.md). Uso: [MACHINE_LEARNING.md](MACHINE_LEARNING.md) §6.
+* **Antes de interpretar resultados:** importar historia real, fijar periodos y ejecutar el ciclo completo
+  (dataset → experimento → calibración → backtest del holdout una sola vez).
+* Para la Fase 10: hoy el tamaño de posición lo fija el backtester (`RiskPerTrade`, `MaxPositionFraction`). El Risk
+  Engine debe tomar esa responsabilidad (límites, exposición, pérdida diaria, drawdown, kill switch) y poder rechazar
+  señales `model-ev` aunque su EV sea positivo.
 
 ---
 

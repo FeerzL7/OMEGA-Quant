@@ -47,7 +47,7 @@ definición de la etiqueta, huella de las velas, conteos por resultado y exclusi
 cd research/ml
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest                                        # 30 tests
+python -m pytest                                        # 34 tests
 ```
 
 ## 3. Ejecutar un experimento
@@ -94,14 +94,36 @@ python -m omega_ml.calibration --experiment ../experiments/<experimentId> --eval
   con `ProbabilityCalibrator`.
 * Si `none` gana, calibrar no ayuda fuera de muestra con esos datos: es un resultado válido, no un error.
 
-## 6. Modelos registrados
+## 6. Valor esperado y backtest del modelo (Fase 9)
 
-`research/models/<tipo>-<hash>/` contiene `model.onnx`, `manifest.json` y, tras la Fase 8, `calibration.json`
+Decisiones en [ADR-012](decisions/ADR-012-expected-value.md).
+
+El experimento escribe `outcome_profile.json` (resultado medio de TP_FIRST y del resto, en múltiplos de ATR, del
+periodo de desarrollo) junto a cada modelo registrado; la calibración añade `calibration.json`. Con los cuatro
+archivos el modelo está listo (`GET /api/models` → `readyForExpectedValue`).
+
+```bash
+curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/json" -d '{
+  "strategy": "model-ev", "modelId": "logistic_regression-<hash>",
+  "symbol": "BTCUSDT", "interval": "5m",
+  "fromUtc": "2025-10-01T00:00:00Z", "toUtc": "2026-01-01T00:00:00Z", "periodLabel": "holdout" }'
+```
+
+* La estrategia entra solo si `EV > minExpectedReturn` (0 por defecto) con la probabilidad **calibrada** y los
+  costos del backtest; cada operación guarda P cruda, P calibrada y el desglose del EV.
+* Compárala con `baseline-ema-trend` y `buy-and-hold` en **el mismo periodo y con los mismos costos**, y repite con
+  costos mayores. Si el periodo se solapa con el de entrenamiento, la API lo advierte: ese resultado no es evidencia.
+* `research/models` se configura con `Research:ModelsDirectory`.
+
+## 7. Modelos registrados
+
+`research/models/<tipo>-<hash>/` contiene `model.onnx`, `manifest.json`, `outcome_profile.json` y, tras la Fase 8,
+`calibration.json`
 (entrada `features` en `float64` con el
 orden exacto de los 8 features, salida P(TP_FIRST), dataset, periodo, hiperparámetros, semilla y verificación
 de paridad). Un modelo cuya exportación ONNX no reproduce exactamente al original no se registra.
 
-## 7. Qué se versiona
+## 8. Qué se versiona
 
 * `research/experiments/<id>/experiment.json` y `calibration-*.json`: sí (registros, pequeños).
 * `oos_predictions.csv`, datasets y modelos: no (reproducibles desde el código, el hash del dataset y la semilla).

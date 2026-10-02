@@ -10,6 +10,11 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup Label="Machine learning">
+    <!-- Same runtime version as the Python research environment (onnxruntime 1.30.0). -->
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Persistence">
     <PackageVersion Include="Npgsql" Version="10.0.3" />
   </ItemGroup>

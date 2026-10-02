@@ -45,10 +45,24 @@ internal sealed class PostgresTestDatabase : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await DataSource.DisposeAsync();
+        NpgsqlConnection.ClearAllPools();
 
+        // FORCE may need to stop a background process (for example autovacuum) that a non-superuser test role is not
+        // allowed to terminate; those finish quickly, so retry briefly before giving up.
         await using var adminSource = NpgsqlDataSource.Create(_adminConnectionString);
-        await using var drop = adminSource.CreateCommand($"DROP DATABASE IF EXISTS {_databaseName} WITH (FORCE)");
-        await drop.ExecuteNonQueryAsync();
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await using var drop = adminSource.CreateCommand($"DROP DATABASE IF EXISTS {_databaseName} WITH (FORCE)");
+                await drop.ExecuteNonQueryAsync();
+                return;
+            }
+            catch (PostgresException ex) when (attempt < 10 && ex.SqlState is PostgresErrorCodes.InsufficientPrivilege or PostgresErrorCodes.ObjectInUse)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(200 * attempt));
+            }
+        }
     }
 }
 

@@ -63,6 +63,10 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-054  | 2026-10-01 | Métodos `none`/`platt`/`isotonic`; selección por log loss, empates al más simple; `none` es un resultado válido. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
 | D-055  | 2026-10-01 | Probabilidad calibrada acotada a [0.001, 0.999]; Platt recorta la entrada a [10⁻⁶, 1 − 10⁻⁶]. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
 | D-056  | 2026-10-01 | Calibrador como `calibration.json` (`omega-calibration-v1`) junto al ONNX; aplicado en C# por `ProbabilityCalibrator` con paridad verificada. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
+| D-057  | 2026-10-01 | EV = p·g·a + (1−p)·l·a − costos, con p calibrada, magnitudes g/l en ATR estimadas en desarrollo, y costos de entrada/salida como en el backtester (TP límite; stop/timeout mercado). | Aceptada (delegada por el propietario) | [ADR-012](decisions/ADR-012-expected-value.md) |
+| D-058  | 2026-10-01 | Estrategia `model-ev`: largo solo si EV > `minExpectedReturn` (0 por defecto); sin umbrales de probabilidad. | Adoptada en Fase 9 | [ADR-012](decisions/ADR-012-expected-value.md) |
+| D-059  | 2026-10-01 | Inferencia ONNX en C# con `Microsoft.ML.OnnxRuntime` 1.30.0 (misma versión que Python), solo en `Omega.Strategy`; paquete verificado por hash. | Adoptada en Fase 9 | [ADR-012](decisions/ADR-012-expected-value.md) |
+| D-060  | 2026-10-01 | Backtests de modelos: evaluaciones contadas por modelo y aviso si el periodo se solapa con el entrenamiento. | Adoptada en Fase 9 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
 
 ## ADRs
 
@@ -79,3 +83,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-009](decisions/ADR-009-feature-engine.md) | Motor de features | Aceptado |
 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) | Estrategia base y protocolo de evaluación | Aceptado |
 | [ADR-011](decisions/ADR-011-probability-calibration.md) | Calibración de probabilidades | Aceptado |
+| [ADR-012](decisions/ADR-012-expected-value.md) | Valor esperado y estrategia guiada por modelo | Aceptado |

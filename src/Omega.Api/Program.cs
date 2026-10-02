@@ -33,14 +33,17 @@ builder.Services.AddSingleton(services => new BacktestService(
     services.GetRequiredService<ICandleStore>(),
     services.GetRequiredService<IBacktestRunStore>(),
     services.GetRequiredService<FeatureEngine>(),
-    services.GetRequiredService<TimeProvider>()));
+    services.GetRequiredService<TimeProvider>(),
+    services.GetRequiredService<ResearchPaths>().ModelsDirectory));
 
 builder.Services.AddSingleton(services => new DatasetBuilder(
     services.GetRequiredService<ICandleStore>(), services.GetRequiredService<FeatureEngine>(), services.GetRequiredService<TimeProvider>()));
 
-// Research datasets go to research/datasets (ignored by git) unless configured otherwise.
-builder.Services.AddSingleton(new ResearchPaths(Path.GetFullPath(
-    configuration["Research:DatasetsDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "..", "..", "research", "datasets"))));
+// Research files live under research/ (datasets and models are ignored by git) unless configured otherwise.
+var researchRoot = Path.Combine(builder.Environment.ContentRootPath, "..", "..", "research");
+builder.Services.AddSingleton(new ResearchPaths(
+    Path.GetFullPath(configuration["Research:DatasetsDirectory"] ?? Path.Combine(researchRoot, "datasets")),
+    Path.GetFullPath(configuration["Research:ModelsDirectory"] ?? Path.Combine(researchRoot, "models"))));
 
 // Enums as names in every response (readable, stable across enum reordering).
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -65,6 +68,7 @@ app.MapMarketEndpoints();
 app.MapFeatureEndpoints();
 app.MapBacktestEndpoints();
 app.MapDatasetEndpoints();
+app.MapModelEndpoints();
 
 await app.RunAsync();
 return 0;

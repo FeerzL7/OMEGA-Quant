@@ -20,10 +20,13 @@ En cada periodo, con los mismos datos y costos:
 
 | Candidato | Referencias |
 |-----------|-------------|
-| Estrategia evaluada (base ahora; modelos de ML desde la Fase 7) | `buy-and-hold` y, para modelos, `baseline-ema-trend` |
+| Estrategia evaluada (base; desde la Fase 9, `model-ev` con un `modelId`) | `buy-and-hold` y, para modelos, `baseline-ema-trend` |
 
 Un candidato solo justifica su complejidad si supera a las referencias **después de costos** y fuera de
 muestra. Si el ML no mejora a la estrategia base, no se justifica más complejidad (roadmap, Fase 6).
+
+Un modelo solo se juzga en periodos **posteriores** a su entrenamiento: la API advierte cuando el periodo del
+backtest se solapa con el periodo de entrenamiento del modelo (resultado dentro de la muestra).
 
 ## 3. Cómo leer un resultado
 

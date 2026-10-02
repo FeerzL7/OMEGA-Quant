@@ -1,0 +1,39 @@
+{
+  "modelId": "random_forest-891ed0f18f50",
+  "modelType": "random_forest",
+  "createdAtUtc": "2026-10-01T14:47:44.589523+00:00",
+  "input": {
+    "name": "features",
+    "type": "float64",
+    "features": [
+      "log_return_1",
+      "log_return_3",
+      "log_return_12",
+      "dist_ema_20",
+      "rsi_14",
+      "volatility_20",
+      "volume_zscore_20",
+      "adx_14"
+    ]
+  },
+  "output": "P(TP_FIRST): probability that the take profit is reached before the stop loss and the timeout. Not calibrated (Phase 8).",
+  "onnxSha256": "891ed0f18f50ab6679e1242b95db3f7eef4201b7dc0fbf71e7e2dedef2fef74a",
+  "parity": {
+    "samples": 3000,
+    "maxAbsoluteDifference": 3.139109561178799e-08,
+    "tolerance": 1e-06
+  },
+  "experimentId": "reference",
+  "datasetId": "reference-dataset",
+  "featureSetVersion": "features-v1",
+  "featureSetHash": "reference",
+  "label": {
+    "stopAtr": 2.0,
+    "targetAtr": 3.0,
+    "horizonCandles": 48
+  },
+  "trainingPeriod": "2025-01-01T00:00:00+00:00..2025-06-01T00:00:00+00:00",
+  "trainingSamples": 3000,
+  "hyperparameters": {},
+  "seed": 7
+}

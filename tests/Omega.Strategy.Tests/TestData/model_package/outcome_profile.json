@@ -1,0 +1,18 @@
+{
+  "format": "omega-outcome-profile-v1",
+  "unit": "ATR14 multiples at the decision candle: (exit_price - entry_price) / atr_14",
+  "winMean": 2.8999999999999995,
+  "winCount": 1108,
+  "lossMean": -1.2649699456884584,
+  "lossCount": 1892,
+  "stopLossShare": 0.6987315010570825,
+  "timeoutMean": 0.5557488820305913,
+  "label": {
+    "stopAtr": 2.0,
+    "targetAtr": 3.0,
+    "horizonCandles": 48
+  },
+  "period": "2025-01-01..2025-06-01",
+  "datasetId": "reference-dataset",
+  "note": "Estimated on the development period only (the samples the model was trained on); never on the holdout."
+}

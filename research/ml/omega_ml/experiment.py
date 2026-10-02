@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from . import dataset as ds
-from . import evaluation, models, registry
+from . import evaluation, expected_value, models, registry
 from .splits import Period, purge, walk_forward
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -96,6 +96,12 @@ def run(dataset_dir: Path, development: Period, holdout: Period, evaluate_holdou
             "_final": final,
         }
 
+    # Outcome magnitudes for the expected value (Phase 9): development samples only, written next to each registered model.
+    profile = expected_value.outcome_profile(final_train, str(development), data.dataset_id, data.manifest["label"])
+    for r in results.values():
+        if r["export"]["status"] == "registered":
+            expected_value.write_profile(profile, models_dir / r["export"]["modelId"])
+
     holdout_record = {"period": str(holdout), "evaluated": False}
     holdout_predictions = None
     if evaluate_holdout:
@@ -116,6 +122,7 @@ def run(dataset_dir: Path, development: Period, holdout: Period, evaluate_holdou
             "baseline_rule": evaluation.against_baseline(oos["target"], oos["target"], oos["baseline_long"]),
         },
         "models": {name: {k: v for k, v in r.items() if not k.startswith("_")} for name, r in results.items()},
+        "outcome_profile": profile,
         "holdout": holdout_record,
         "seed": seed,
         "environment": _environment(),

@@ -25,7 +25,16 @@ public static partial class BacktestEndpoints
     }
 
     public static Ok<IReadOnlyList<StrategyResponse>> GetStrategies() =>
-        TypedResults.Ok<IReadOnlyList<StrategyResponse>>([.. StrategyCatalog.All.Select(d => new StrategyResponse(d.Name, d.Description, d.DefaultConfig, d.IsBenchmark))]);
+        TypedResults.Ok<IReadOnlyList<StrategyResponse>>(
+        [
+            .. StrategyCatalog.All.Select(d => new StrategyResponse(d.Name, d.Description, d.DefaultConfig, d.IsBenchmark)),
+            new StrategyResponse(
+                BacktestService.ModelStrategy,
+                "Model-driven: calibrated P(TP_FIRST) from a registered model → expected value after costs; long only if EV > minExpectedReturn (default 0). Uses the model's label barriers and horizon. Requires modelId.",
+                new BacktestConfig(),
+                IsBenchmark: false,
+                RequiresModelId: true),
+        ]);
 
     public static async Task<Results<Created<BacktestRunResponse>, ValidationProblem, ProblemHttpResult>> RunAsync(
         BacktestRunRequest request, BacktestService backtests, CancellationToken cancellationToken)
@@ -48,7 +57,7 @@ public static partial class BacktestEndpoints
 
         var serviceRequest = new BacktestRequest(
             request.Strategy!, request.Symbol!, interval, request.FromUtc!.Value.ToUniversalTime(), request.ToUtc!.Value.ToUniversalTime(),
-            request.PeriodLabel!, request.FeeRate, request.SpreadBps, request.SlippageBps);
+            request.PeriodLabel!, request.FeeRate, request.SpreadBps, request.SlippageBps, request.ModelId, request.MinExpectedReturn);
 
         try
         {
@@ -58,6 +67,7 @@ public static partial class BacktestEndpoints
                 return outcome.Error!.Code switch
                 {
                     BacktestServiceErrors.NotEnoughData => TypedResults.Problem(title: outcome.Error.Message, statusCode: StatusCodes.Status422UnprocessableEntity),
+                    BacktestServiceErrors.ModelUnavailable => TypedResults.Problem(title: outcome.Error.Message, statusCode: StatusCodes.Status422UnprocessableEntity),
                     _ => TypedResults.ValidationProblem(new Dictionary<string, string[]> { [outcome.Error.Code] = [outcome.Error.Message] }),
                 };
             }

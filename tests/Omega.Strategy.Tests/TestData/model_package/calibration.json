@@ -1,0 +1,13 @@
+{
+  "format": "omega-calibration-v1",
+  "method": "platt",
+  "epsilon": 0.001,
+  "logitEpsilon": 1e-06,
+  "platt": {
+    "a": 1.001802940905748,
+    "b": 0.000821034094962589,
+    "formula": "sigmoid(a * logit(clip(p, logitEpsilon, 1 - logitEpsilon)) + b)"
+  },
+  "output": "clip(calibrated, epsilon, 1 - epsilon)",
+  "modelId": "logistic_regression-3d80f01a363a"
+}

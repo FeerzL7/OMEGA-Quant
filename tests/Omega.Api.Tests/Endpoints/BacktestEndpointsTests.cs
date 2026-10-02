@@ -19,7 +19,7 @@ public class BacktestEndpointsTests
     {
         var strategies = BacktestEndpoints.GetStrategies().Value!;
 
-        Assert.Equal(["baseline-ema-trend", "buy-and-hold"], strategies.Select(s => s.Name));
+        Assert.Equal(["baseline-ema-trend", "buy-and-hold", "model-ev"], strategies.Select(s => s.Name));
         Assert.Equal(48, strategies[0].DefaultConfig.MaxHoldingCandles);
     }
 

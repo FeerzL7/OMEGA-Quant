@@ -12,6 +12,8 @@ namespace Omega.Api.Contracts;
 /// <param name="FeeRate">Optional commission override (cost stress test).</param>
 /// <param name="SpreadBps">Optional spread override.</param>
 /// <param name="SlippageBps">Optional slippage override.</param>
+/// <param name="ModelId">Registered model, required by the <c>model-ev</c> strategy (see <c>GET /api/models</c>).</param>
+/// <param name="MinExpectedReturn">For <c>model-ev</c>: minimum expected return after costs to enter (default 0).</param>
 public sealed record BacktestRunRequest(
     string? Strategy,
     string? Symbol,
@@ -21,7 +23,9 @@ public sealed record BacktestRunRequest(
     string? PeriodLabel,
     decimal? FeeRate,
     decimal? SpreadBps,
-    decimal? SlippageBps);
+    decimal? SlippageBps,
+    string? ModelId = null,
+    double? MinExpectedReturn = null);
 
 /// <summary>A stored backtest with its full result (equity curve resampled to one point per day).</summary>
 public sealed record BacktestRunResponse(
@@ -41,4 +45,4 @@ public sealed record BacktestRunResponse(
 }
 
 /// <summary>Entry of <c>GET /api/strategies</c>.</summary>
-public sealed record StrategyResponse(string Name, string Description, BacktestConfig DefaultConfig, bool IsBenchmark);
+public sealed record StrategyResponse(string Name, string Description, BacktestConfig DefaultConfig, bool IsBenchmark, bool RequiresModelId = false);

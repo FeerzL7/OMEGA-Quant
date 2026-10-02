@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
     <ProjectReference Include="..\Omega.Features\Omega.Features.csproj" />
   </ItemGroup>

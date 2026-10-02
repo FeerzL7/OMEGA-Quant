@@ -68,5 +68,5 @@ public static partial class DatasetEndpoints
     private static partial Regex SymbolPattern();
 }
 
-/// <summary>Where research files are written. Configured by <c>Research:DatasetsDirectory</c>.</summary>
-public sealed record ResearchPaths(string DatasetsDirectory);
+/// <summary>Research directories. Configured by <c>Research:DatasetsDirectory</c> and <c>Research:ModelsDirectory</c>.</summary>
+public sealed record ResearchPaths(string DatasetsDirectory, string ModelsDirectory);

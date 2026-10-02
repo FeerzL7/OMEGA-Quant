@@ -30,8 +30,14 @@ def write_dataset(directory: Path, n: int = 3000, signal: bool = True, seed: int
     frame["baseline_long"] = (frame["dist_ema_20"] > 0.5).astype(int)
     frame["label"] = label
     frame["label_end_open_time_utc"] = (t + pd.to_timedelta(holding * 5, unit="min")).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    for column in ["entry_price", "stop_loss", "take_profit", "exit_price", "gross_return"]:
-        frame[column] = 1.0
+    # Barrier outcomes in ATR units around an entry of 100 with ATR 1 (written into atr_14 below).
+    frame["atr_14"] = 1.0
+    frame["entry_price"] = 100.0
+    frame["stop_loss"] = 98.0
+    frame["take_profit"] = 103.0
+    timeout_r = rng.uniform(-1.5, 2.5, n)
+    frame["exit_price"] = 100.0 + np.where(label == "TP_FIRST", 3.0, np.where(label == "SL_FIRST", -2.0, timeout_r))
+    frame["gross_return"] = frame["exit_price"] / frame["entry_price"] - 1
     frame["holding_candles"] = holding
     frame = frame[COLUMNS]
 

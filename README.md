@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 9 — Valor esperado.** Los modelos se ejecutan en C# (ONNX), su probabilidad calibrada se convierte en valor
+esperado después de costos y la estrategia `model-ev` solo entra con EV positivo. Se compara en backtest contra la
+estrategia base y buy & hold con el mismo protocolo.
+
 **Fase 8 — Calibración.** Calibración de probabilidades (Platt, isotónica o ninguna) elegida por su efecto
 fuera de muestra, análisis de fiabilidad y calibrador exportado junto al modelo para que C# lo aplique.
 
@@ -92,6 +96,7 @@ curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/j
   Opcionales para estrés de costos: `feeRate`, `spreadBps`, `slippageBps`. La respuesta incluye métricas,
   estadísticas, operaciones, equity diaria y avisos (por ejemplo, si un `holdout` ya fue evaluado).
 * `GET /api/backtests` y `GET /api/backtests/{id}`: historial de ejecuciones y detalle.
+* `GET /api/models`: modelos registrados y si están listos para el valor esperado (ONNX, calibración y perfil).
 * `POST /api/datasets`: exporta un dataset de investigación (features + etiquetas) a `research/datasets/<id>/`.
   Ver [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md).
 * `GET /api/features/catalog`: conjunto de features activo (versión, hash y ficha de cada feature).
