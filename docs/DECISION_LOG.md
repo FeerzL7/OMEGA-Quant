@@ -67,6 +67,14 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-058  | 2026-10-01 | Estrategia `model-ev`: largo solo si EV > `minExpectedReturn` (0 por defecto); sin umbrales de probabilidad. | Adoptada en Fase 9 | [ADR-012](decisions/ADR-012-expected-value.md) |
 | D-059  | 2026-10-01 | Inferencia ONNX en C# con `Microsoft.ML.OnnxRuntime` 1.30.0 (misma versión que Python), solo en `Omega.Strategy`; paquete verificado por hash. | Adoptada en Fase 9 | [ADR-012](decisions/ADR-012-expected-value.md) |
 | D-060  | 2026-10-01 | Backtests de modelos: evaluaciones contadas por modelo y aviso si el periodo se solapa con el entrenamiento. | Adoptada en Fase 9 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
+| D-061  | 2026-10-01 | `Omega.Risk` independiente del modelo (solo referencia Core, verificado por test); aprueba y dimensiona toda entrada; nunca bloquea salidas. | Aceptada (delegada por el propietario) | [ADR-013](decisions/ADR-013-risk-engine.md) |
+| D-062  | 2026-10-01 | Controles en orden fijo con el kill switch primero; códigos `RISK_...`; mapeo a `NO_TRADE`. | Adoptada en Fase 10 | [RISK_MODEL.md](RISK_MODEL.md) |
+| D-063  | 2026-10-01 | Límites diarios sobre equity marcado a mercado y día UTC; bloqueos diarios y de racha expiran al día siguiente. | Adoptada en Fase 10 | [RISK_MODEL.md](RISK_MODEL.md) |
+| D-064  | 2026-10-01 | Kill switch automático por drawdown máximo, manual con motivo, sin rearme automático; bloquea entradas, no cierra posiciones. | Adoptada en Fase 10 | [ADR-013](decisions/ADR-013-risk-engine.md) |
+| D-065  | 2026-10-01 | Política en la sección `Risk` (defectos conservadores, validada al arrancar), cambios por ejecución en backtests y registro de la política usada. | Adoptada en Fase 10 | [RISK_MODEL.md](RISK_MODEL.md) |
+| D-066  | 2026-10-01 | Monte Carlo sobre operaciones de un backtest (retorno sobre equity previo + fracción comprometida); bootstrap, bloques circulares y permutación; robustez por costos y operaciones perdidas. | Aceptada (delegada por el propietario) | [ADR-014](decisions/ADR-014-monte-carlo.md) |
+| D-067  | 2026-10-01 | Ruina = el equity llegó alguna vez al umbral; probabilidad del kill switch con la política registrada del backtest; drawdowns medidos entre operaciones (cotas inferiores). | Adoptada en Fase 11 | [MONTE_CARLO.md](MONTE_CARLO.md) |
+| D-068  | 2026-10-01 | Monte Carlo determinista por semilla y sin persistencia; avisos obligatorios (no es predicción, pocas operaciones, drawdown intradía, run sin política). | Adoptada en Fase 11 | [ADR-014](decisions/ADR-014-monte-carlo.md) |
 
 ## ADRs
 
@@ -84,3 +92,5 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) | Estrategia base y protocolo de evaluación | Aceptado |
 | [ADR-011](decisions/ADR-011-probability-calibration.md) | Calibración de probabilidades | Aceptado |
 | [ADR-012](decisions/ADR-012-expected-value.md) | Valor esperado y estrategia guiada por modelo | Aceptado |
+| [ADR-013](decisions/ADR-013-risk-engine.md) | Risk Engine | Aceptado |
+| [ADR-014](decisions/ADR-014-monte-carlo.md) | Monte Carlo para análisis de escenarios | Aceptado |

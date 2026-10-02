@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Omega.Core\Omega.Core.csproj" />
+    <!-- Every simulated entry is approved and sized by the Risk Engine (Phase 10). -->
+    <ProjectReference Include="..\Omega.Risk\Omega.Risk.csproj" />
     <ProjectReference Include="..\Omega.Features\Omega.Features.csproj" />
     <ProjectReference Include="..\Omega.Strategy\Omega.Strategy.csproj" />
   </ItemGroup>

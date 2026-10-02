@@ -35,8 +35,8 @@ internal static class Engines
 {
     public static readonly BacktestConfig NoCosts = new() { FeeRate = 0m, SpreadBps = 0m, SlippageBps = 0m };
 
-    public static BacktestEngine Create(BacktestConfig? config = null, int featureLookback = 1) =>
-        new(new FeatureEngine(new FeatureSet("test-v1", [new CloseFeature(featureLookback)])), config ?? NoCosts);
+    public static BacktestEngine Create(BacktestConfig? config = null, int featureLookback = 1, Omega.Risk.RiskLimits? risk = null) =>
+        new(new FeatureEngine(new FeatureSet("test-v1", [new CloseFeature(featureLookback)])), config ?? NoCosts, risk);
 }
 
 /// <summary>Emits the given signal at the close of the given candle index; Hold otherwise. Records what it saw.</summary>

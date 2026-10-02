@@ -10,7 +10,9 @@ namespace Omega.Application.Backtesting;
 /// <param name="Create">Creates a fresh instance for each run.</param>
 /// <param name="DefaultConfig">Simulation assumptions it is evaluated under.</param>
 /// <param name="IsBenchmark">A reference to compare against (for example buy and hold), not a candidate strategy.</param>
-public sealed record StrategyDefinition(string Name, string Description, Func<IStrategy> Create, BacktestConfig DefaultConfig, bool IsBenchmark = false);
+/// <param name="RiskPerTradeOverride">Replaces the risk per trade of the risk policy (buy and hold invests all capital).</param>
+public sealed record StrategyDefinition(
+    string Name, string Description, Func<IStrategy> Create, BacktestConfig DefaultConfig, bool IsBenchmark = false, decimal? RiskPerTradeOverride = null);
 
 /// <summary>Strategies available for backtesting. Benchmarks are strategies too, so they share the same rules.</summary>
 public static class StrategyCatalog
@@ -26,8 +28,9 @@ public static class StrategyCatalog
             BuyAndHold.Name,
             "Benchmark: invest all capital at the first opportunity and hold to the end.",
             () => new BuyAndHold(),
-            new BacktestConfig { RiskPerTrade = 1m },
-            IsBenchmark: true),
+            new BacktestConfig(),
+            IsBenchmark: true,
+            RiskPerTradeOverride: 1m),
     ];
 
     public static StrategyDefinition? Find(string name) =>

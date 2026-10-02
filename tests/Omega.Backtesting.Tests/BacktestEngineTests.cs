@@ -175,7 +175,7 @@ public class BacktestEngineTests
         var rejected = tooSmall.Run(candles, new ScriptedStrategy(new() { [0] = Signal.Long(90m) })).Value;
 
         Assert.Equal(33.333m, steppedTrade.Quantity);   // 100 / 3 = 33.333…, rounded down
-        Assert.Equal(RejectionCodes.PositionTooSmall, Assert.Single(rejected.Rejections).Code);
+        Assert.Equal("RISK_POSITION_TOO_SMALL", Assert.Single(rejected.Rejections).Code);
     }
 
     [Fact]
@@ -297,7 +297,7 @@ public class BacktestEngineTests
     [Fact]
     public void Invalid_configuration_is_rejected()
     {
-        var engine = Engines.Create(new BacktestConfig { MaxPositionFraction = 2m });
+        var engine = Engines.Create(risk: new Omega.Risk.RiskLimits { MaxPositionFraction = 2m });
 
         var result = engine.Run(Flats(100m, 100m), new ScriptedStrategy());
 

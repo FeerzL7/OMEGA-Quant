@@ -25,10 +25,10 @@ public class TradingStartAndStatisticsTests
     [Fact]
     public void Buy_and_hold_matches_the_closed_form_result_after_costs()
     {
-        var config = new BacktestConfig { RiskPerTrade = 1m };   // default costs: 0.10 %, 1 bp, 2 bp
+        var config = new BacktestConfig();   // default costs: 0.10 %, 1 bp, 2 bp
         var candles = Flats(100m, 100m, 104m, 120m);
 
-        var result = Engines.Create(config).Run(candles, new BuyAndHold()).Value;
+        var result = Engines.Create(config, risk: new Omega.Risk.RiskLimits { RiskPerTrade = 1m }).Run(candles, new BuyAndHold()).Value;
 
         var entry = 100m * (1m + 0.00005m + 0.0002m);
         var quantity = 10_000m / (entry * 1.001m);                // capped by capital including the fee

@@ -64,7 +64,7 @@ public sealed class EmaTrendBaseline : IStrategy
 }
 
 /// <summary>
-/// Benchmark: buy at the first opportunity and hold to the end. Run it with RiskPerTrade = 1 so the whole capital
+/// Benchmark: buy at the first opportunity and hold to the end. Run it with risk limits RiskPerTrade = 1 so the whole capital
 /// is invested. Its stop is symbolic (a 99.9999 % fall), so it never exits early.
 /// </summary>
 public sealed class BuyAndHold : IStrategy

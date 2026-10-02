@@ -26,6 +26,8 @@ public class PostgresBacktestRunStoreTests : DatabaseTest
         Assert.Equal((run.Id, run.PeriodLabel, run.TradingStartUtc, run.TradingEndUtc), (loaded!.Id, loaded.PeriodLabel, loaded.TradingStartUtc, loaded.TradingEndUtc));
         Assert.Equal(Serialize(run.Result), Serialize(loaded.Result));
         Assert.Equal(7, loaded.Result.NoTradeCounts[NoTradeReason.FeaturesUnavailable]);
+        Assert.Equal(0.02m, loaded.Result.Risk!.MaxDailyLoss);
+        Assert.Equal(2, loaded.Result.RiskSummary!.RejectionsByCheck["RISK_DAILY_LOSS_LIMIT"]);
         Assert.Null(await store.GetAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
@@ -66,7 +68,9 @@ public class PostgresBacktestRunStoreTests : DatabaseTest
             new DatasetFingerprint("BTCUSDT", CandleInterval.FiveMinutes, Start, Start.AddDays(1), 288, "sha"),
             [trade], [new EquityPoint(Start.AddMinutes(5), 10_000m, 0m)], [new BacktestRejection(Start, "X", "Detail.")],
             new Dictionary<NoTradeReason, int> { [NoTradeReason.FeaturesUnavailable] = 7 }, ["A warning."], metrics,
-            new TradeStatistics(1, 0.005, null, null, null, null));
+            new TradeStatistics(1, 0.005, null, null, null, null),
+            new Omega.Risk.RiskLimits { MaxDailyLoss = 0.02m },
+            new RiskSummary(new Dictionary<string, int> { ["RISK_DAILY_LOSS_LIMIT"] = 2 }, Start.AddHours(3), "Maximum drawdown reached."));
 
         return new BacktestRun(Guid.NewGuid(), Start.AddMinutes(createdMinutes), label, Start, Start.AddDays(1), result);
     }

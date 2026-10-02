@@ -165,6 +165,15 @@ public class DependencyRulesTests
     }
 
     [Fact]
+    public void Risk_engine_is_independent_of_models_and_strategies()
+    {
+        // CLAUDE.md §18: the Risk Engine judges signals and portfolio state only; it must not see models,
+        // features or strategies, so it can never be bent by the thing it is supposed to check.
+        Assert.Equal([Core], _solution["Omega.Risk"].ProjectReferences);
+        Assert.Empty(_solution["Omega.Risk"].PackageReferences);
+    }
+
+    [Fact]
     public void Project_reference_graph_has_no_cycles()
     {
         var cycle = FindCycle(_solution.Projects);

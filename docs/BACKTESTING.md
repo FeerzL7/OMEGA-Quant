@@ -83,6 +83,14 @@ Sobre la curva de equity (una observación por cierre de vela) y las operaciones
 El PnL de cada operación es neto: `cantidad × salida − comisión de salida − (cantidad × entrada + comisión de entrada)`,
 con precios de ejecución que ya incluyen spread y slippage.
 
+## Riesgo (Fase 10)
+
+Cada entrada que pide la estrategia pasa por el Risk Engine ([RISK_MODEL.md](RISK_MODEL.md)): aprobación al cerrar
+la vela de decisión (kill switch, pérdida diaria, racha, posiciones, exposición, spread, slippage, datos) y tamaño al
+ejecutar. El backtester ya no dimensiona por su cuenta: `RiskPerTrade` y `MaxPositionFraction` son límites de
+riesgo, no parámetros de simulación. Los rechazos aparecen en `rejections` (códigos `RISK_...`) y en
+`riskSummary`, junto con la activación del kill switch si ocurrió; `risk` registra la política usada.
+
 ## Periodo de trading y calentamiento
 
 El servicio de backtests carga, antes del periodo pedido, solo las velas que los features necesitan para

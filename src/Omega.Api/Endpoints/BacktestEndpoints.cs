@@ -21,6 +21,7 @@ public static partial class BacktestEndpoints
         group.MapPost("/", RunAsync);
         group.MapGet("/", ListAsync);
         group.MapGet("/{id:guid}", GetAsync);
+        group.MapPost("/{id:guid}/monte-carlo", MonteCarloAsync);
         return endpoints;
     }
 
@@ -57,7 +58,7 @@ public static partial class BacktestEndpoints
 
         var serviceRequest = new BacktestRequest(
             request.Strategy!, request.Symbol!, interval, request.FromUtc!.Value.ToUniversalTime(), request.ToUtc!.Value.ToUniversalTime(),
-            request.PeriodLabel!, request.FeeRate, request.SpreadBps, request.SlippageBps, request.ModelId, request.MinExpectedReturn);
+            request.PeriodLabel!, request.FeeRate, request.SpreadBps, request.SlippageBps, request.ModelId, request.MinExpectedReturn, request.Risk);
 
         try
         {
@@ -110,6 +111,57 @@ public static partial class BacktestEndpoints
         {
             var run = await runs.GetAsync(id, cancellationToken);
             return run is null ? TypedResults.NotFound() : TypedResults.Ok(BacktestRunResponse.From(run));
+        }
+        catch (PersistenceException)
+        {
+            return TypedResults.Problem(title: "Data store unavailable.", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+    }
+
+    /// <summary>Scenario analysis over the trades of a stored backtest (Phase 11). Not a forecast.</summary>
+    public static async Task<Results<Ok<MonteCarloOutcome>, NotFound, ValidationProblem, ProblemHttpResult>> MonteCarloAsync(
+        Guid id, MonteCarloRequest? request, MonteCarloService monteCarlo, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(monteCarlo);
+        request ??= new MonteCarloRequest();
+
+        Omega.Backtesting.MonteCarlo.MonteCarloMethod method;
+        switch (request.Method)
+        {
+            case null or "bootstrap": method = Omega.Backtesting.MonteCarlo.MonteCarloMethod.Bootstrap; break;
+            case "block-bootstrap": method = Omega.Backtesting.MonteCarlo.MonteCarloMethod.BlockBootstrap; break;
+            case "shuffle": method = Omega.Backtesting.MonteCarlo.MonteCarloMethod.Shuffle; break;
+            default:
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["method"] = ["bootstrap, block-bootstrap or shuffle."] });
+        }
+
+        var defaults = new Omega.Backtesting.MonteCarlo.MonteCarloOptions();
+        var options = defaults with
+        {
+            Method = method,
+            Paths = request.Paths ?? defaults.Paths,
+            HorizonTrades = request.HorizonTrades,
+            BlockLength = request.BlockLength ?? defaults.BlockLength,
+            RuinLevel = request.RuinLevel ?? defaults.RuinLevel,
+            ExtraCostBps = request.ExtraCostBps ?? defaults.ExtraCostBps,
+            SkipProbability = request.SkipProbability ?? defaults.SkipProbability,
+            Seed = request.Seed ?? defaults.Seed,
+        };
+
+        try
+        {
+            var outcome = await monteCarlo.RunAsync(id, options, cancellationToken);
+            if (outcome.IsSuccess)
+            {
+                return TypedResults.Ok(outcome.Value);
+            }
+
+            return outcome.Error!.Code switch
+            {
+                MonteCarloServiceErrors.RunNotFound => TypedResults.NotFound(),
+                Omega.Backtesting.MonteCarlo.MonteCarloErrors.NoTrades => TypedResults.Problem(title: outcome.Error.Message, statusCode: StatusCodes.Status422UnprocessableEntity),
+                _ => TypedResults.ValidationProblem(new Dictionary<string, string[]> { [outcome.Error.Code] = [outcome.Error.Message] }),
+            };
         }
         catch (PersistenceException)
         {

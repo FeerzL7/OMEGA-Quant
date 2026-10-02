@@ -11,6 +11,14 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 11 — Monte Carlo.** Análisis de escenarios sobre las operaciones de un backtest (bootstrap, bloques,
+permutación, estrés de costos): rango de resultados, drawdown, rachas, ruina y probabilidad de que salte el kill
+switch. No es una predicción. Ver [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md).
+
+**Fase 10 — Risk Engine.** Un motor de riesgo independiente del modelo aprueba y dimensiona cada entrada (riesgo
+por operación, exposición, pérdida diaria, drawdown, racha, spread, slippage, integridad de datos) y tiene un kill
+switch que solo una persona puede rearmar. Ver [`docs/RISK_MODEL.md`](docs/RISK_MODEL.md).
+
 **Fase 9 — Valor esperado.** Los modelos se ejecutan en C# (ONNX), su probabilidad calibrada se convierte en valor
 esperado después de costos y la estrategia `model-ev` solo entra con EV positivo. Se compara en backtest contra la
 estrategia base y buy & hold con el mismo protocolo.
@@ -96,6 +104,10 @@ curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/j
   Opcionales para estrés de costos: `feeRate`, `spreadBps`, `slippageBps`. La respuesta incluye métricas,
   estadísticas, operaciones, equity diaria y avisos (por ejemplo, si un `holdout` ya fue evaluado).
 * `GET /api/backtests` y `GET /api/backtests/{id}`: historial de ejecuciones y detalle.
+* `POST /api/backtests/{id}/monte-carlo`: escenarios sobre las operaciones de ese backtest (ver
+  [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)).
+* `GET /api/risk/limits`: política de riesgo vigente (sección `Risk` de la configuración). En
+  `POST /api/backtests`, `"risk": { "maxDailyLoss": 0.01, ... }` cambia límites solo para esa ejecución.
 * `GET /api/models`: modelos registrados y si están listos para el valor esperado (ONNX, calibración y perfil).
 * `POST /api/datasets`: exporta un dataset de investigación (features + etiquetas) a `research/datasets/<id>/`.
   Ver [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md).
@@ -183,4 +195,6 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/BACKTESTING.md`](docs/BACKTESTING.md)
 * [`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md)
 * [`docs/MACHINE_LEARNING.md`](docs/MACHINE_LEARNING.md)
+* [`docs/RISK_MODEL.md`](docs/RISK_MODEL.md)
+* [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)
 * [`docs/decisions/`](docs/decisions/)

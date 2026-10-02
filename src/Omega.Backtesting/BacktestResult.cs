@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Omega.Core.MarketData;
 using Omega.Core.Trading;
+using Omega.Risk;
 using Omega.Strategy;
 
 namespace Omega.Backtesting;
@@ -47,7 +48,7 @@ public static class RejectionCodes
     public const string ShortNotSupportedOnSpot = "SHORT_NOT_SUPPORTED_ON_SPOT";
     public const string StopNotBelowEntry = "STOP_NOT_BELOW_ENTRY";
     public const string TakeProfitNotAboveEntry = "TAKE_PROFIT_NOT_ABOVE_ENTRY";
-    public const string PositionTooSmall = "POSITION_TOO_SMALL";
+    // Entries refused by the Risk Engine use RiskDecision.Code (RISK_...), e.g. RISK_POSITION_TOO_SMALL.
     public const string SignalExpiredByDataGap = "SIGNAL_EXPIRED_BY_DATA_GAP";
 }
 
@@ -82,6 +83,10 @@ public sealed record DatasetFingerprint(
 }
 
 /// <summary>Everything needed to reproduce and judge a backtest.</summary>
+/// <remarks>
+/// <c>Risk</c> and <c>RiskSummary</c> are always set by the engine since Phase 10; they are null only in runs stored
+/// before that, read back from the database.
+/// </remarks>
 public sealed record BacktestResult(
     StrategyIdentity Strategy,
     string FeatureSetVersion,
@@ -94,4 +99,12 @@ public sealed record BacktestResult(
     IReadOnlyDictionary<NoTradeReason, int> NoTradeCounts,
     IReadOnlyList<string> Warnings,
     BacktestMetrics Metrics,
-    TradeStatistics Statistics);
+    TradeStatistics Statistics,
+    RiskLimits? Risk,
+    RiskSummary? RiskSummary);
+
+/// <summary>What the Risk Engine did during a backtest.</summary>
+/// <param name="RejectionsByCheck">Entries refused, by risk code (e.g. RISK_DAILY_LOSS_LIMIT).</param>
+/// <param name="KillSwitchTrippedAtUtc">When the kill switch tripped, if it did (no new entries after it).</param>
+/// <param name="KillSwitchReason">Why it tripped.</param>
+public sealed record RiskSummary(IReadOnlyDictionary<string, int> RejectionsByCheck, DateTimeOffset? KillSwitchTrippedAtUtc, string? KillSwitchReason);

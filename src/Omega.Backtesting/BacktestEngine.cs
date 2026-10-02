@@ -2,6 +2,7 @@ using System.Globalization;
 using Omega.Core.MarketData;
 using Omega.Core.Results;
 using Omega.Core.Trading;
+using Omega.Risk;
 using Omega.Features;
 using Omega.Strategy;
 
@@ -30,9 +31,13 @@ public static class BacktestErrors
 /// A signal pending across a data gap is discarded (it would be stale). Short signals close a long and never open
 /// a short (Spot).
 /// </remarks>
-public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig config, IPositionSizer? sizer = null)
+/// <summary>
+/// Replays closed candles through a strategy. Every entry the strategy asks for is first approved and then sized
+/// by the Risk Engine (<see cref="RiskManager"/>), exactly as in the live pipeline; exits are never blocked.
+/// </summary>
+public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig config, RiskLimits? riskLimits = null)
 {
-    private readonly IPositionSizer _sizer = sizer ?? new FixedFractionalSizer();
+    private readonly RiskLimits _risk = riskLimits ?? RiskLimits.Default;
 
     /// <param name="candles">Closed candles, oldest first.</param>
     /// <param name="strategy">Strategy to evaluate.</param>
@@ -45,7 +50,7 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
         ArgumentNullException.ThrowIfNull(candles);
         ArgumentNullException.ThrowIfNull(strategy);
 
-        var configErrors = config.Validate();
+        var configErrors = config.Validate().Concat(_risk.Validate()).ToList();
         if (configErrors.Count > 0)
         {
             return Fail(BacktestErrors.InvalidConfig, string.Join(" ", configErrors));
@@ -68,7 +73,8 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             return Fail(BacktestErrors.NoCandles, "No candle at or after the trading start.");
         }
 
-        var run = new Simulation(config, _sizer, strategy, candles, series.Value, tradingStart);
+        var risk = new RiskManager(_risk, config.InitialCapital, tradingStart);
+        var run = new Simulation(config, risk, strategy, candles, series.Value, tradingStart);
         run.Execute();
 
         var intervalSeconds = candles[0].Interval.ToTimeSpan().TotalSeconds;
@@ -87,14 +93,16 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             run.NoTradeCounts,
             run.Warnings,
             metrics,
-            TradeStatistics.From(run.Trades)));
+            TradeStatistics.From(run.Trades),
+            _risk,
+            new RiskSummary(run.RiskRejections, risk.KillSwitch.TrippedAtUtc, risk.KillSwitch.Reason)));
     }
 
     private static Result<BacktestResult> Fail(string code, string message) =>
         Result.Failure<BacktestResult>(new Error(code, message));
 
     private sealed class Simulation(
-        BacktestConfig config, IPositionSizer sizer, IStrategy strategy, IReadOnlyList<Candle> candles, IReadOnlyList<FeatureVector> features,
+        BacktestConfig config, RiskManager risk, IStrategy strategy, IReadOnlyList<Candle> candles, IReadOnlyList<FeatureVector> features,
         DateTimeOffset tradingStart)
     {
         private decimal _cash = config.InitialCapital;
@@ -110,6 +118,8 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
         public List<BacktestRejection> Rejections { get; } = [];
 
         public Dictionary<NoTradeReason, int> NoTradeCounts { get; } = [];
+
+        public Dictionary<string, int> RiskRejections { get; } = [];
 
         public List<string> Warnings { get; } = [];
 
@@ -129,7 +139,7 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
                     // it is executed at the open of the first trading candle.
                     if (i + 1 <= last && candles[i + 1].OpenTimeUtc >= tradingStart)
                     {
-                        Decide(candle, features[i]);
+                        Decide(candle, features[i], ContiguousWithPrevious(i));
                     }
 
                     continue;
@@ -191,12 +201,15 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
                 // 4. Close of candle i: decide for candle i+1 (nothing can be executed after the last candle).
                 if (i < last)
                 {
-                    Decide(candle, features[i]);
+                    Decide(candle, features[i], ContiguousWithPrevious(i));
                 }
             }
         }
 
-        private void Decide(Candle candle, FeatureVector vector)
+        private bool ContiguousWithPrevious(int i) =>
+            i == 0 || candles[i].OpenTimeUtc - candles[i - 1].OpenTimeUtc == candles[i].Interval.ToTimeSpan();
+
+        private void Decide(Candle candle, FeatureVector vector, bool marketDataReliable)
         {
             var signal = vector.IsComplete
                 ? strategy.Evaluate(new StrategyContext(candle, vector, _position?.View))
@@ -205,7 +218,19 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             switch (signal.Direction)
             {
                 case SignalDirection.Long when _position is null:
-                    _pendingEntry = new PendingEntry(candle.CloseTimeUtc, signal.StopLossPrice!.Value, signal.TakeProfitPrice, signal.Explanation);
+                    // Flat on Spot with one position at most: equity = cash, no open exposure.
+                    var check = risk.CheckEntry(
+                        new PortfolioSnapshot(_cash, _cash, OpenPositions: 0, OpenExposure: 0m),
+                        new MarketConditions(config.SpreadBps, config.SlippageBps, marketDataReliable, ExecutionAvailable: true));
+                    if (check.Approved)
+                    {
+                        _pendingEntry = new PendingEntry(candle.CloseTimeUtc, signal.StopLossPrice!.Value, signal.TakeProfitPrice, signal.Explanation);
+                    }
+                    else
+                    {
+                        RejectByRisk(candle.CloseTimeUtc, check);
+                    }
+
                     break;
 
                 case SignalDirection.Short when _position is not null:
@@ -239,14 +264,17 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
                 return;
             }
 
-            var quantity = sizer.Size(_cash, fill, entry.StopLoss, config);
-            var cost = quantity * fill;
-            if (quantity <= 0 || (config.MinNotional is { } minNotional && cost < minNotional))
+            // Sized at the simulated fill price. Live trading sizes at the reference price just before submitting;
+            // the difference is the slippage already charged in the fill.
+            var sizing = risk.Size(new PortfolioSnapshot(_cash, _cash, 0, 0m), fill, entry.StopLoss, config.FeeRate, config.Filters);
+            if (!sizing.Approved)
             {
-                Reject(candle.OpenTimeUtc, RejectionCodes.PositionTooSmall,
-                    string.Create(CultureInfo.InvariantCulture, $"Quantity {quantity} (value {cost}) is below the exchange minimum or zero."));
+                RejectByRisk(candle.OpenTimeUtc, sizing);
                 return;
             }
+
+            var quantity = sizing.Quantity;
+            var cost = quantity * fill;
 
             var fee = cost * config.FeeRate;
             _cash -= cost + fee;
@@ -280,12 +308,14 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             var fee = proceeds * config.FeeRate;
             _cash += proceeds - fee;
 
+            var netPnl = proceeds - fee - ((position.Quantity * position.EntryPrice) + position.EntryFee);
             Trades.Add(new BacktestTrade(
                 position.EntryCandleOpenTimeUtc, position.EntryPrice, position.Quantity, position.EntryFee,
                 position.StopLoss, position.TakeProfit, candle.OpenTimeUtc, fill, fee, reason,
                 index - position.EntryIndex + 1,
-                proceeds - fee - ((position.Quantity * position.EntryPrice) + position.EntryFee),
+                netPnl,
                 position.Explanation));
+            risk.OnTradeClosed(netPnl);
 
             _position = null;
         }
@@ -295,6 +325,13 @@ public sealed class BacktestEngine(FeatureEngine featureEngine, BacktestConfig c
             var equity = _cash + (_position is { } p ? p.Quantity * candle.Close : 0m);
             _peak = Math.Max(_peak, equity);
             Equity.Add(new EquityPoint(candle.CloseTimeUtc, equity, (equity / _peak) - 1m));
+            risk.OnEquity(candle.CloseTimeUtc, equity);
+        }
+
+        private void RejectByRisk(DateTimeOffset time, RiskDecision decision)
+        {
+            Reject(time, decision.Code!, decision.Detail);
+            RiskRejections[decision.Code!] = RiskRejections.GetValueOrDefault(decision.Code!) + 1;
         }
 
         private void Reject(DateTimeOffset time, string code, string detail) => Rejections.Add(new BacktestRejection(time, code, detail));

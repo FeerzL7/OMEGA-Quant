@@ -23,9 +23,9 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 7    | Machine Learning                    | **Completada** |
 | 8    | Probability Calibration             | **Completada** |
 | 9    | Expected Value                      | **Completada** |
-| 10   | Risk Engine                         | Siguiente     |
-| 11   | Monte Carlo                         | Pendiente     |
-| 12   | Paper Trading                       | Pendiente     |
+| 10   | Risk Engine                         | **Completada** |
+| 11   | Monte Carlo                         | **Completada** |
+| 12   | Paper Trading                       | Siguiente     |
 | 13   | Monitoring Dashboard                | Pendiente     |
 | 14   | Testnet                             | Pendiente     |
 | 15   | Live Readiness                      | Pendiente     |
@@ -110,7 +110,26 @@ siguiente sin instrucción del propietario.
   (dataset → experimento → calibración → backtest del holdout una sola vez).
 * Para la Fase 10: hoy el tamaño de posición lo fija el backtester (`RiskPerTrade`, `MaxPositionFraction`). El Risk
   Engine debe tomar esa responsabilidad (límites, exposición, pérdida diaria, drawdown, kill switch) y poder rechazar
-  señales `model-ev` aunque su EV sea positivo.
+  señales `model-ev` aunque su EV sea positivo. *(Hecho.)*
+
+### Notas de la Fase 10
+
+* Decisiones: [ADR-013](decisions/ADR-013-risk-engine.md). Modelo: [RISK_MODEL.md](RISK_MODEL.md).
+* **Pendiente del propietario:** revisar los límites por defecto de la sección `Risk` (son conservadores, no
+  optimizados) y fijar los propios antes de interpretar backtests.
+* Para la Fase 12: conectar el mismo `RiskManager` al pipeline en vivo, con estado persistido (equity pico, inicio
+  de día, racha, kill switch), spread y slippage observados, integridad del estado de mercado, y comandos de la API
+  para activar y rearmar el kill switch (con auditoría).
+
+### Notas de la Fase 11
+
+* Decisiones: [ADR-014](decisions/ADR-014-monte-carlo.md). Guía: [MONTE_CARLO.md](MONTE_CARLO.md).
+* Usar Monte Carlo como parte de la lectura de cada backtest relevante (¿fue afortunada la secuencia?, ¿resiste
+  costos?, ¿cuánto drawdown planear?), nunca como pronóstico.
+* La Fase 12 es la primera que ejecuta el pipeline completo en tiempo real: datos → features → modelo → calibración →
+  EV → riesgo → decisión → ejecución simulada (paper) → diario. Implica decisiones de arquitectura (estado persistido
+  del riesgo y de las posiciones, `IExecutionProvider`, ciclo de vida de órdenes, ADR-007 si el panel necesita tiempo
+  real) que se plantearán al inicio de la fase.
 
 ---
 

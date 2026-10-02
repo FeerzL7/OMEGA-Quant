@@ -10,8 +10,10 @@ la estrategia base (Fase 6) y a todo modelo posterior, que se comparará contra 
    * `development`: donde se explora y se ajusta (por ejemplo, los primeros ~70 %).
    * `holdout`: el periodo final, reservado. Se evalúa **una vez**, al final, con la estrategia congelada.
    Anotar las fechas en el registro de experimentos (`research/experiments/`) antes de la primera ejecución.
-3. **Fijar los costos**: por defecto comisión 0.10 %, spread 1 pb, slippage 2 pb (ver [BACKTESTING.md](BACKTESTING.md)).
-4. **No optimizar la estrategia base.** Sus parámetros son convencionales y se fijaron antes de ver datos. Si se
+3. **Fijar la política de riesgo** (sección `Risk`) y no cambiarla según los resultados; el resultado registra la
+   política usada. Comparar estrategias con la **misma** política.
+4. **Fijar los costos**: por defecto comisión 0.10 %, spread 1 pb, slippage 2 pb (ver [BACKTESTING.md](BACKTESTING.md)).
+5. **No optimizar la estrategia base.** Sus parámetros son convencionales y se fijaron antes de ver datos. Si se
    cambian, es otra estrategia (otra versión) y otro experimento.
 
 ## 2. Qué se compara
@@ -38,6 +40,9 @@ backtest se solapa con el periodo de entrenamiento del modelo (resultado dentro 
 * **Estrés de costos.** Repetir con costos mayores (por ejemplo comisión 0.20 % y slippage 10 pb). Un resultado
   que desaparece con costos algo peores no es robusto.
 * **Drawdown y exposición** junto al retorno: un retorno similar con menor drawdown es preferible.
+* **Monte Carlo** ([MONTE_CARLO.md](MONTE_CARLO.md)) sobre el backtest: si el drawdown observado queda por debajo del
+  P5 de las permutaciones, la secuencia fue afortunada; si unos pocos pb extra de costo vuelven la pérdida casi
+  segura, la ventaja no es robusta. Monte Carlo no añade evidencia: solo muestra el rango que el backtest permite.
 
 ## 4. Disciplina del holdout
 

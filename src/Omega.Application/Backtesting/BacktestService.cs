@@ -4,6 +4,7 @@ using Omega.Core.MarketData;
 using Omega.Core.Results;
 using Omega.Core.Trading;
 using Omega.Features;
+using Omega.Risk;
 using Omega.Strategy;
 using Omega.Strategy.Models;
 
@@ -21,6 +22,7 @@ namespace Omega.Application.Backtesting;
 /// <param name="SlippageBps">Overrides the default slippage.</param>
 /// <param name="ModelId">Registered model for the <c>model-ev</c> strategy.</param>
 /// <param name="MinExpectedReturn">Minimum expected return to enter, for <c>model-ev</c> (default 0).</param>
+/// <param name="Risk">Changes to the risk policy for this run only (stress tests); null keeps the configured policy.</param>
 public sealed record BacktestRequest(
     string StrategyName,
     string Symbol,
@@ -32,7 +34,38 @@ public sealed record BacktestRequest(
     decimal? SpreadBps = null,
     decimal? SlippageBps = null,
     string? ModelId = null,
-    double? MinExpectedReturn = null);
+    double? MinExpectedReturn = null,
+    RiskOverrides? Risk = null);
+
+/// <summary>Per-run changes to the risk policy. Null fields keep the configured value.</summary>
+public sealed record RiskOverrides(
+    decimal? RiskPerTrade = null,
+    decimal? MaxPositionFraction = null,
+    int? MaxOpenPositions = null,
+    decimal? MaxExposureFraction = null,
+    decimal? MaxDailyLoss = null,
+    decimal? MaxDrawdown = null,
+    int? MaxConsecutiveLosses = null,
+    decimal? MaxSpreadBps = null,
+    decimal? MaxSlippageBps = null)
+{
+    public RiskLimits ApplyTo(RiskLimits limits)
+    {
+        ArgumentNullException.ThrowIfNull(limits);
+        return limits with
+        {
+            RiskPerTrade = RiskPerTrade ?? limits.RiskPerTrade,
+            MaxPositionFraction = MaxPositionFraction ?? limits.MaxPositionFraction,
+            MaxOpenPositions = MaxOpenPositions ?? limits.MaxOpenPositions,
+            MaxExposureFraction = MaxExposureFraction ?? limits.MaxExposureFraction,
+            MaxDailyLoss = MaxDailyLoss ?? limits.MaxDailyLoss,
+            MaxDrawdown = MaxDrawdown ?? limits.MaxDrawdown,
+            MaxConsecutiveLosses = MaxConsecutiveLosses ?? limits.MaxConsecutiveLosses,
+            MaxSpreadBps = MaxSpreadBps ?? limits.MaxSpreadBps,
+            MaxSlippageBps = MaxSlippageBps ?? limits.MaxSlippageBps,
+        };
+    }
+}
 
 /// <summary>A stored run and the cautions that apply to reading it.</summary>
 /// <param name="Run">The stored run.</param>
@@ -46,12 +79,21 @@ public static class BacktestServiceErrors
     public const string InvalidPeriod = "BACKTEST_INVALID_PERIOD";
     public const string NotEnoughData = "BACKTEST_NOT_ENOUGH_DATA";
     public const string ModelUnavailable = "BACKTEST_MODEL_UNAVAILABLE";
+    public const string InvalidRiskLimits = "BACKTEST_INVALID_RISK_LIMITS";
 }
 
 /// <summary>Runs backtests on stored candles and records every run.</summary>
 public sealed class BacktestService(
-    ICandleStore candles, IBacktestRunStore runs, FeatureEngine featureEngine, TimeProvider timeProvider, string? modelsDirectory = null)
+    ICandleStore candles,
+    IBacktestRunStore runs,
+    FeatureEngine featureEngine,
+    TimeProvider timeProvider,
+    string? modelsDirectory = null,
+    RiskLimits? riskPolicy = null)
 {
+    /// <summary>The configured risk policy every run starts from.</summary>
+    public RiskLimits RiskPolicy { get; } = riskPolicy ?? RiskLimits.Default;
+
     /// <summary>Strategy name for model-driven backtests (needs a model id).</summary>
     public const string ModelStrategy = ModelExpectedValueStrategy.NamePrefix;
 
@@ -75,7 +117,8 @@ public sealed class BacktestService(
                 $"Unknown strategy '{request.StrategyName}'. Known: {string.Join(", ", StrategyCatalog.All.Select(d => d.Name).Append(ModelStrategy))}.");
         }
 
-        return await RunAsync(request, definition.Create(), definition.DefaultConfig, definition.IsBenchmark, extraNotices: [], cancellationToken).ConfigureAwait(false);
+        var policy = definition.RiskPerTradeOverride is { } riskPerTrade ? RiskPolicy with { RiskPerTrade = riskPerTrade } : RiskPolicy;
+        return await RunAsync(request, definition.Create(), definition.DefaultConfig, policy, definition.IsBenchmark, extraNotices: [], cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<Result<BacktestOutcome>> RunModelAsync(BacktestRequest request, CancellationToken cancellationToken)
@@ -105,13 +148,20 @@ public sealed class BacktestService(
             notices.Add($"The model was trained on part of this period ({package.TrainingPeriod}): the result is in-sample and is not evidence of out-of-sample performance.");
         }
 
-        return await RunAsync(request, strategy, config, isBenchmark: false, notices, cancellationToken).ConfigureAwait(false);
+        return await RunAsync(request, strategy, config, RiskPolicy, isBenchmark: false, notices, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<Result<BacktestOutcome>> RunAsync(
-        BacktestRequest request, IStrategy strategy, BacktestConfig defaultConfig, bool isBenchmark, IReadOnlyList<string> extraNotices,
-        CancellationToken cancellationToken)
+        BacktestRequest request, IStrategy strategy, BacktestConfig defaultConfig, RiskLimits policy, bool isBenchmark,
+        IReadOnlyList<string> extraNotices, CancellationToken cancellationToken)
     {
+        var limits = request.Risk?.ApplyTo(policy) ?? policy;
+        var riskErrors = limits.Validate();
+        if (riskErrors.Count > 0)
+        {
+            return Fail(BacktestServiceErrors.InvalidRiskLimits, string.Join(" ", riskErrors));
+        }
+
         var length = request.Interval.ToTimeSpan();
         if (request.ToUtc <= request.FromUtc || request.ToUtc - request.FromUtc > MaxPeriod
             || request.FromUtc.UtcTicks % length.Ticks != 0 || request.ToUtc.UtcTicks % length.Ticks != 0)
@@ -137,7 +187,7 @@ public sealed class BacktestService(
                 $"No stored {request.Symbol} {request.Interval.ToCode()} candles in the period. Import history first (MarketData:Backfill:HistoryStart).");
         }
 
-        var result = new BacktestEngine(featureEngine, config).Run(history, strategy, request.FromUtc);
+        var result = new BacktestEngine(featureEngine, config, limits).Run(history, strategy, request.FromUtc);
         if (result.IsFailure)
         {
             return Result.Failure<BacktestOutcome>(result.Error!);
@@ -176,6 +226,12 @@ public sealed class BacktestService(
     internal static IReadOnlyList<string> Notices(BacktestRequest request, bool isBenchmark, BacktestRun run, int previousEvaluations)
     {
         var notices = new List<string>();
+
+        if (run.Result.RiskSummary?.KillSwitchTrippedAtUtc is { } tripped)
+        {
+            notices.Add(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                $"The kill switch tripped at {tripped:O} ({run.Result.RiskSummary!.KillSwitchReason}); no entries after it."));
+        }
 
         if (previousEvaluations > 0 && request.PeriodLabel.Contains("holdout", StringComparison.Ordinal))
         {

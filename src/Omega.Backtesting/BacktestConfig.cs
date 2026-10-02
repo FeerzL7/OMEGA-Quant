@@ -21,12 +21,6 @@ public sealed record BacktestConfig
     /// <summary>Adverse price movement on market orders (entries, stop losses, signal/time exits), in basis points.</summary>
     public decimal SlippageBps { get; init; } = 2m;
 
-    /// <summary>Fraction of equity risked per trade: loss if the stop loss is hit, before costs (§18).</summary>
-    public decimal RiskPerTrade { get; init; } = 0.01m;
-
-    /// <summary>Maximum position value as a fraction of equity. 1 = no leverage (Spot).</summary>
-    public decimal MaxPositionFraction { get; init; } = 1m;
-
     /// <summary>Quantity step (lot size) to round down to, if set. Verify with the exchange's exchangeInfo.</summary>
     public decimal? QuantityStep { get; init; }
 
@@ -44,14 +38,15 @@ public sealed record BacktestConfig
         if (FeeRate is < 0 or >= 0.1m) errors.Add("FeeRate must be in [0, 0.1).");
         if (SpreadBps is < 0 or > 1000) errors.Add("SpreadBps must be in [0, 1000].");
         if (SlippageBps is < 0 or > 1000) errors.Add("SlippageBps must be in [0, 1000].");
-        if (RiskPerTrade is <= 0 or > 1) errors.Add("RiskPerTrade must be in (0, 1].");
-        if (MaxPositionFraction is <= 0 or > 1) errors.Add("MaxPositionFraction must be in (0, 1] (Spot: no leverage).");
         if (QuantityStep is <= 0) errors.Add("QuantityStep must be positive when set.");
         if (MinNotional is < 0) errors.Add("MinNotional cannot be negative.");
         if (MaxHoldingCandles is < 1) errors.Add("MaxHoldingCandles must be at least 1 when set.");
 
         return errors;
     }
+
+    /// <summary>The exchange rules simulated for order quantities.</summary>
+    public Omega.Core.Trading.InstrumentFilters Filters => new(QuantityStep, MinQuantity: null, MinNotional);
 
     internal decimal HalfSpread => SpreadBps / 2m / 10_000m;
 
