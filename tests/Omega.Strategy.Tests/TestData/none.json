@@ -1,0 +1,7 @@
+{
+  "format": "omega-calibration-v1",
+  "method": "none",
+  "epsilon": 0.001,
+  "logitEpsilon": 1e-06,
+  "output": "clip(calibrated, epsilon, 1 - epsilon)"
+}

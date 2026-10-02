@@ -21,8 +21,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 5    | Backtester                          | **Completada** |
 | 6    | Baseline Strategy                   | **Completada** |
 | 7    | Machine Learning                    | **Completada** |
-| 8    | Probability Calibration             | Siguiente     |
-| 9    | Expected Value                      | Pendiente     |
+| 8    | Probability Calibration             | **Completada** |
+| 9    | Expected Value                      | Siguiente     |
 | 10   | Risk Engine                         | Pendiente     |
 | 11   | Monte Carlo                         | Pendiente     |
 | 12   | Paper Trading                       | Pendiente     |
@@ -95,6 +95,13 @@ siguiente sin instrucción del propietario.
   walk-forward), nunca sobre predicciones del conjunto de entrenamiento.
 * Pendiente: inferencia ONNX en C# (Fase 9); decidir qué hacer con LightGBM si resulta el mejor modelo
   (su exportación ONNX no es exacta).
+
+### Notas de la Fase 8
+
+* Decisiones: [ADR-011](decisions/ADR-011-probability-calibration.md). Uso: [MACHINE_LEARNING.md](MACHINE_LEARNING.md) §5.
+* Para la Fase 9: cargar el paquete `model.onnx` + `calibration.json` en C# (inferencia ONNX), calcular el valor
+  esperado con la probabilidad **calibrada** y los costos del backtester, y comparar en backtest contra la
+  estrategia base y buy & hold con el protocolo de evaluación.
 
 ---
 

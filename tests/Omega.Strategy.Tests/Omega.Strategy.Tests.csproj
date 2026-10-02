@@ -4,4 +4,9 @@
     <ProjectReference Include="..\..\src\Omega.Strategy\Omega.Strategy.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Calibration reference produced by TestData/generate_calibration_reference.py (Python calibration module). -->
+    <EmbeddedResource Include="TestData\*.json;TestData\*.csv" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

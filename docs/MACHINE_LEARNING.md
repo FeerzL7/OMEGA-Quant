@@ -47,7 +47,7 @@ definición de la etiqueta, huella de las velas, conteos por resultado y exclusi
 cd research/ml
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest                                        # 20 tests
+python -m pytest                                        # 30 tests
 ```
 
 ## 3. Ejecutar un experimento
@@ -76,13 +76,32 @@ python -m omega_ml.experiment ... --evaluate-holdout
 * **Folds:** un modelo que solo funciona en uno o dos folds no es estable.
 * Las probabilidades **no están calibradas** todavía (Fase 8): no se interpretan como probabilidades reales.
 
-## 5. Modelos registrados
+## 5. Calibrar (Fase 8)
 
-`research/models/<tipo>-<hash>/` contiene `model.onnx` y `manifest.json` (entrada `features` en `float64` con el
+Decisiones en [ADR-011](decisions/ADR-011-probability-calibration.md).
+
+```bash
+python -m omega_ml.calibration --experiment ../experiments/<experimentId>
+# al final, una sola vez (requiere que el experimento haya evaluado el holdout):
+python -m omega_ml.calibration --experiment ../experiments/<experimentId> --evaluate-holdout
+```
+
+* Compara `none`, `platt` e `isotonic` con un walk-forward anidado sobre las predicciones fuera de muestra (cada
+  fold se calibra con los anteriores, con purging) y elige el menor log loss; en empate, el más simple.
+* Reporta, para crudo y calibrado: log loss, Brier, ECE, MCE, tabla de fiabilidad (10 bins con IC de Wilson 95 %)
+  y la descomposición de Brier. Registro en `research/experiments/<id>/calibration-<fecha>.json`.
+* Guarda el calibrador elegido como `calibration.json` junto al `model.onnx` de cada modelo registrado. C# lo carga
+  con `ProbabilityCalibrator`.
+* Si `none` gana, calibrar no ayuda fuera de muestra con esos datos: es un resultado válido, no un error.
+
+## 6. Modelos registrados
+
+`research/models/<tipo>-<hash>/` contiene `model.onnx`, `manifest.json` y, tras la Fase 8, `calibration.json`
+(entrada `features` en `float64` con el
 orden exacto de los 8 features, salida P(TP_FIRST), dataset, periodo, hiperparámetros, semilla y verificación
 de paridad). Un modelo cuya exportación ONNX no reproduce exactamente al original no se registra.
 
-## 6. Qué se versiona
+## 7. Qué se versiona
 
-* `research/experiments/<id>/experiment.json`: sí (registro del experimento, pequeño).
+* `research/experiments/<id>/experiment.json` y `calibration-*.json`: sí (registros, pequeños).
 * `oos_predictions.csv`, datasets y modelos: no (reproducibles desde el código, el hash del dataset y la semilla).

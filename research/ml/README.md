@@ -8,6 +8,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m pytest
 python -m omega_ml.experiment --dataset ../datasets/<id> --development A:B --holdout B:C [--evaluate-holdout]
+python -m omega_ml.calibration --experiment ../experiments/<id> [--evaluate-holdout]
 ```
 
 Reglas: no recalcular features ni etiquetas aquí; no evaluar el holdout más de una vez; no ajustar

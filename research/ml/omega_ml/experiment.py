@@ -45,6 +45,7 @@ def run(dataset_dir: Path, development: Period, holdout: Period, evaluate_holdou
     experiment_id = f"{created:%Y%m%dT%H%M%SZ}-{data.dataset_id[:8]}"
     oos = pd.DataFrame({
         "decision_open_time_utc": dev["decision_open_time_utc"].iloc[np.concatenate([f.test_index for f in wf])].to_numpy(),
+        "label_end_open_time_utc": dev["label_end_open_time_utc"].iloc[np.concatenate([f.test_index for f in wf])].to_numpy(),
         "target": np.concatenate([y_dev[f.test_index] for f in wf]),
         "baseline_long": np.concatenate([dev["baseline_long"].to_numpy()[f.test_index] for f in wf]),
         "fold": np.concatenate([np.full(len(f.test_index), f.number) for f in wf]),
@@ -96,8 +97,9 @@ def run(dataset_dir: Path, development: Period, holdout: Period, evaluate_holdou
         }
 
     holdout_record = {"period": str(holdout), "evaluated": False}
+    holdout_predictions = None
     if evaluate_holdout:
-        holdout_record = _evaluate_holdout(frame, holdout, results, data.dataset_id, experiments_dir)
+        holdout_record, holdout_predictions = _evaluate_holdout(frame, holdout, results, data.dataset_id, experiments_dir)
 
     record = {
         "experimentId": experiment_id,
@@ -123,6 +125,8 @@ def run(dataset_dir: Path, development: Period, holdout: Period, evaluate_holdou
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "experiment.json").write_text(json.dumps(record, indent=2, default=_json_default), encoding="utf-8")
     oos.to_csv(directory / "oos_predictions.csv", index=False, date_format="%Y-%m-%dT%H:%M:%S.%fZ")
+    if holdout_predictions is not None:
+        holdout_predictions.to_csv(directory / "holdout_predictions.csv", index=False, date_format="%Y-%m-%dT%H:%M:%S.%fZ")
     record["directory"] = str(directory)
     return record
 
@@ -137,13 +141,20 @@ def _export(final, name: str, x_check: np.ndarray, models_dir: Path, metadata: d
         return {"status": "not_registered", "reason": str(error)}
 
 
-def _evaluate_holdout(frame: pd.DataFrame, holdout: Period, results: dict, dataset_id: str, experiments_dir: Path) -> dict:
+def _evaluate_holdout(frame: pd.DataFrame, holdout: Period, results: dict, dataset_id: str, experiments_dir: Path) -> tuple[dict, pd.DataFrame]:
     previous = count_holdout_evaluations(experiments_dir, dataset_id, str(holdout))
     test = frame[holdout.mask(frame)]
     x, y = test[ds.MODEL_FEATURES].to_numpy(), test["target"].to_numpy()
+    predictions = pd.DataFrame({
+        "decision_open_time_utc": test["decision_open_time_utc"].to_numpy(),
+        "label_end_open_time_utc": test["label_end_open_time_utc"].to_numpy(),
+        "target": y,
+        "baseline_long": test["baseline_long"].to_numpy(),
+    })
     per_model = {}
     for name, r in results.items():
         p = r["_final"].predict_proba(x)[:, 1]
+        predictions[f"p_{name}"] = p
         per_model[name] = {
             "metrics": evaluation.probabilistic(y, p),
             "vs_baseline": evaluation.against_baseline(y, p, test["baseline_long"].to_numpy()),
@@ -157,7 +168,7 @@ def _evaluate_holdout(frame: pd.DataFrame, holdout: Period, results: dict, datas
         "samples": int(len(test)),
         "base_rate": float(y.mean()) if len(y) else None,
         "models": per_model,
-    }
+    }, predictions
 
 
 def count_holdout_evaluations(experiments_dir: Path, dataset_id: str, period: str) -> int:

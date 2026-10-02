@@ -11,6 +11,9 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 8 — Calibración.** Calibración de probabilidades (Platt, isotónica o ninguna) elegida por su efecto
+fuera de muestra, análisis de fiabilidad y calibrador exportado junto al modelo para que C# lo aplique.
+
 **Fase 7 — Machine learning.** Datasets con features y etiquetas triple barrera calculados por el propio
 sistema (`POST /api/datasets`) y pipeline de investigación en Python (`research/ml`): validación cronológica con
 purging, regresión logística, Random Forest y LightGBM, comparación con la estrategia base y exportación ONNX.

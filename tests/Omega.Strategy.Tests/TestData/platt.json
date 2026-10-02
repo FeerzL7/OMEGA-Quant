@@ -1,0 +1,12 @@
+{
+  "format": "omega-calibration-v1",
+  "method": "platt",
+  "epsilon": 0.001,
+  "logitEpsilon": 1e-06,
+  "platt": {
+    "a": 0.44332695113089565,
+    "b": 0.020717794065375147,
+    "formula": "sigmoid(a * logit(clip(p, logitEpsilon, 1 - logitEpsilon)) + b)"
+  },
+  "output": "clip(calibrated, epsilon, 1 - epsilon)"
+}

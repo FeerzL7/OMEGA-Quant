@@ -59,6 +59,10 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-050  | 2026-09-30 | Walk-forward expansivo con purging; holdout solo con `--evaluate-holdout`, contado; hiperparámetros fijos sin búsqueda. | Adoptada en Fase 7 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
 | D-051  | 2026-09-30 | Modelos en ONNX, registrados solo con paridad exacta (10⁻⁶) en todo el desarrollo; sklearn con entradas `float64`; LightGBM evaluado pero no registrado mientras su exportación no sea exacta. | Adoptada en Fase 7 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) |
 | D-052  | 2026-09-30 | La Fase 7 mide poder predictivo (log loss, Brier, AUC, precisión a igual cobertura); calibración en la Fase 8 y valor económico en la Fase 9. | Adoptada en Fase 7 | [MACHINE_LEARNING.md](MACHINE_LEARNING.md) |
+| D-053  | 2026-10-01 | Calibración ajustada solo con predicciones fuera de muestra y evaluada con walk-forward anidado (con purging). | Aceptada (delegada por el propietario) | [ADR-011](decisions/ADR-011-probability-calibration.md) |
+| D-054  | 2026-10-01 | Métodos `none`/`platt`/`isotonic`; selección por log loss, empates al más simple; `none` es un resultado válido. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
+| D-055  | 2026-10-01 | Probabilidad calibrada acotada a [0.001, 0.999]; Platt recorta la entrada a [10⁻⁶, 1 − 10⁻⁶]. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
+| D-056  | 2026-10-01 | Calibrador como `calibration.json` (`omega-calibration-v1`) junto al ONNX; aplicado en C# por `ProbabilityCalibrator` con paridad verificada. | Adoptada en Fase 8 | [ADR-011](decisions/ADR-011-probability-calibration.md) |
 
 ## ADRs
 
@@ -74,3 +78,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |
 | [ADR-009](decisions/ADR-009-feature-engine.md) | Motor de features | Aceptado |
 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) | Estrategia base y protocolo de evaluación | Aceptado |
+| [ADR-011](decisions/ADR-011-probability-calibration.md) | Calibración de probabilidades | Aceptado |
