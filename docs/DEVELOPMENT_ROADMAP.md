@@ -27,7 +27,7 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 11   | Monte Carlo                         | **Completada** |
 | 12   | Paper Trading                       | **Completada** |
 | 13   | Monitoring Dashboard                | **Completada** |
-| 14   | Testnet                             | Siguiente     |
+| 14   | Testnet                             | Diseñada; en espera de la puerta de estabilidad |
 | 15   | Live Readiness                      | Pendiente     |
 | 16   | Controlled Live                     | Pendiente     |
 
@@ -150,6 +150,14 @@ siguiente sin instrucción del propietario.
 * La Fase 14 (Testnet) solo debe empezar cuando el paper trading haya demostrado estabilidad técnica con datos reales
   (roadmap). Requiere credenciales de Testnet (user-secrets), un `TestnetExecutionProvider` con reconciliación de órdenes,
   los filtros reales del exchange (`exchangeInfo`) y el stream de datos de usuario: decisiones que se plantearán al inicio.
+
+### Estado de la Fase 14
+
+* **Diseño confirmado** por el propietario el 2026-10-02: [ADR-017](decisions/ADR-017-exchange-execution-demo-testnet.md)
+  (Demo Mode por defecto, Testnet configurable).
+* **Implementación diferida** por decisión del propietario hasta superar la puerta de estabilidad del paper trading con
+  datos reales: [PAPER_STABILITY.md](PAPER_STABILITY.md). El resultado se registra en el DECISION_LOG.
+* Al retomarla: volver a verificar en la documentación oficial de Binance los hechos listados en ADR-017.
 
 ---
 

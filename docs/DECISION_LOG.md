@@ -87,6 +87,9 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-078  | 2026-10-02 | Gráficos SVG generados por Blazor, geometría en C# probada; sin librerías JS ni CDN. | Aceptada (confirmada por el propietario) | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) |
 | D-079  | 2026-10-02 | DTOs propios de la UI con contratos verificados por muestras JSON generadas desde los tipos de la API. | Aceptada (confirmada por el propietario) | [DASHBOARD.md](DASHBOARD.md) |
 | D-080  | 2026-10-02 | Honestidad de datos en la UI: sin excepciones hacia componentes, "—" para ausentes, frescura visible, "No disponible" sin datos viejos, régimen "No implementado". | Aceptada (confirmada por el propietario) | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) |
+| D-081  | 2026-10-02 | La Fase 14 no se implementa hasta superar la puerta de estabilidad del paper trading con datos reales (criterios verificables en PAPER_STABILITY.md). | Aceptada (decisión del propietario) | [PAPER_STABILITY.md](PAPER_STABILITY.md) |
+| D-082  | 2026-10-02 | Entorno de ejecución de la Fase 14 configurable: Binance Spot **Demo Mode** por defecto, Testnet como alternativa. | Aceptada (decisión del propietario) | [ADR-017](decisions/ADR-017-exchange-execution-demo-testnet.md) |
+| D-083  | 2026-10-02 | Diseño de la Fase 14: REST firmado, stream de usuario por WebSocket API (`subscribe.signature`), reconciliación por `clientOrderId`, filtros de `exchangeInfo`, salvaguardas contra URLs del exchange real. Implementación diferida. | Aceptada (confirmada por el propietario) | [ADR-017](decisions/ADR-017-exchange-execution-demo-testnet.md) |
 
 ## ADRs
 
@@ -108,3 +111,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-014](decisions/ADR-014-monte-carlo.md) | Monte Carlo para análisis de escenarios | Aceptado |
 | [ADR-015](decisions/ADR-015-paper-trading.md) | Paper trading | Aceptado |
 | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) | Panel de monitoreo | Aceptado |
+| [ADR-017](decisions/ADR-017-exchange-execution-demo-testnet.md) | Ejecución en Demo Mode / Testnet | Aceptado; implementación diferida |

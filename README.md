@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Próximo paso: verificar la estabilidad del paper trading con datos reales** ([`docs/PAPER_STABILITY.md`](docs/PAPER_STABILITY.md)).
+La Fase 14 (ejecución en Binance Demo Mode / Testnet) está diseñada
+([ADR-017](docs/decisions/ADR-017-exchange-execution-demo-testnet.md)) pero no se implementará hasta superar esa puerta.
+
 **Fase 13 — Panel de monitoreo.** Panel en Blazor (Interactive Server) con mercado, velas, señal, probabilidades, EV,
 riesgo, posiciones, órdenes, salud del sistema, eventos, sesiones de paper (con kill switch) y backtests. Lee el sistema
 solo a través de la API. Ver [`docs/DASHBOARD.md`](docs/DASHBOARD.md).
@@ -213,4 +217,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)
 * [`docs/PAPER_TRADING.md`](docs/PAPER_TRADING.md)
 * [`docs/DASHBOARD.md`](docs/DASHBOARD.md)
+* [`docs/PAPER_STABILITY.md`](docs/PAPER_STABILITY.md)
 * [`docs/decisions/`](docs/decisions/)

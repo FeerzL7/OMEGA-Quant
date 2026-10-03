@@ -79,6 +79,11 @@ ciclo (la respuesta es 202 Accepted). Motivo y autor son obligatorios y quedan r
 > **Seguridad:** la API todavía no tiene autenticación. Quien llegue a ella puede rearmar el kill switch. Exponla solo en
 > `localhost` hasta la Fase 15.
 
+## Antes de la Fase 14
+
+El paper trading debe superar la puerta de estabilidad con datos reales antes de enviar órdenes a cualquier entorno de
+Binance: [PAPER_STABILITY.md](PAPER_STABILITY.md).
+
 ## Limitaciones conocidas
 
 * Los llenados se simulan con velas cerradas y los costos configurados; no hay libro de órdenes ni latencia real.
