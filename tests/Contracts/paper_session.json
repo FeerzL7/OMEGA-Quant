@@ -1,0 +1,32 @@
+{
+  "name": "paper-1",
+  "symbol": "BTCUSDT",
+  "interval": "5m",
+  "strategy": "model-ev:logistic_regression-3d80f01a363a",
+  "createdAtUtc": "2026-09-13T12:00:00+00:00",
+  "updatedAtUtc": "2026-09-15T12:00:00+00:00",
+  "lastCandleOpenTimeUtc": "2026-09-15T11:55:00+00:00",
+  "candlesProcessed": 576,
+  "cash": 0,
+  "lastEquity": 10250.5,
+  "peakEquity": 10400,
+  "drawdown": -0.0144,
+  "dayStartEquity": 10100,
+  "consecutiveLosses": 2,
+  "position": {
+    "entryCandleOpenTimeUtc": "2026-09-15T11:30:00+00:00",
+    "entryPrice": 64010.5,
+    "quantity": 0.1562,
+    "stopLoss": 63400,
+    "takeProfit": 64900,
+    "holdingCandles": 6
+  },
+  "entryPending": false,
+  "exitPending": false,
+  "killSwitch": {
+    "active": true,
+    "reason": "manual: exchange incident (by fer)",
+    "trippedAtUtc": "2026-09-15T11:50:00+00:00",
+    "resetBy": null
+  }
+}

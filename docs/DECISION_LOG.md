@@ -8,7 +8,7 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 |--------|------------|----------|--------|------------|
 | D-001  | 2026-09-28 | Target framework **.NET 10 (LTS)**. El soporte de .NET 8 termina en noviembre de 2026; .NET 10 tiene soporte hasta noviembre de 2028. | Propuesta (pendiente ADR-001) | — |
 | D-002  | 2026-09-28 | **Blazor** para la UI inicial. | Aceptada (roadmap del propietario) | [ADR-006](decisions/ADR-006-blazor-ui.md) |
-| D-003  | 2026-09-28 | En la Fase 0 la UI usa **renderizado estático en servidor**. El modo interactivo (Server, WebAssembly o Auto) se decide con la primera función que lo necesite. | Pendiente | [ADR-006](decisions/ADR-006-blazor-ui.md) |
+| D-003  | 2026-09-28 | En la Fase 0 la UI usa **renderizado estático en servidor**. El modo interactivo (Server, WebAssembly o Auto) se decide con la primera función que lo necesite. | Resuelta en Fase 13: **Interactive Server** (D-076) | [ADR-006](decisions/ADR-006-blazor-ui.md) |
 | D-004  | 2026-09-28 | `Omega.UI` **no referencia ningún proyecto**; se comunicará con el sistema solo por HTTP con `Omega.Api`. Reforzado por tests. | Adoptada en Fase 0 | [ARCHITECTURE §4-6](ARCHITECTURE.md) |
 | D-005  | 2026-09-28 | Reproducibilidad del build: `global.json` (SDK 10.0.100, `latestFeature`), Central Package Management (`Directory.Packages.props`), `nuget.config` con nuget.org como única fuente, warnings tratados como errores. | Adoptada en Fase 0 | — |
 | D-006  | 2026-09-28 | Framework de tests **xUnit 2.9.3** con `Microsoft.NET.Test.Sdk` y `xunit.runner.visualstudio` (versiones de la plantilla oficial del SDK 10). Alternativas: xUnit v3, NUnit, MSTest. | Adoptada en Fase 0 | — |
@@ -82,6 +82,11 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | D-073  | 2026-10-01 | Kill switch por comandos encolados (motivo y autor obligatorios) aplicados por el Worker. | Aceptada (confirmada por el propietario) | [ADR-015](decisions/ADR-015-paper-trading.md) |
 | D-074  | 2026-10-01 | Guardia de modo (Testnet/Live → código 2) y sesiones de configuración inmutable comparada por significado (código 3). | Aceptada (confirmada por el propietario) | [PAPER_TRADING.md](PAPER_TRADING.md) |
 | D-075  | 2026-10-01 | `Signal.Metrics` para registrar en el diario probabilidad cruda y calibrada y EV como datos estructurados (§27). | Adoptada en Fase 12 | [ADR-015](decisions/ADR-015-paper-trading.md) |
+| D-076  | 2026-10-02 | UI en Blazor **Interactive Server**; el servidor de la UI es el único cliente de la API. | Aceptada (confirmada por el propietario) | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) |
+| D-077  | 2026-10-02 | Tiempo real: consulta a la API cada 5 s; sin hub de SignalR hasta que algo requiera < 1 s. | Aceptada (confirmada por el propietario) | [ADR-007](decisions/ADR-007-realtime-ui.md) |
+| D-078  | 2026-10-02 | Gráficos SVG generados por Blazor, geometría en C# probada; sin librerías JS ni CDN. | Aceptada (confirmada por el propietario) | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) |
+| D-079  | 2026-10-02 | DTOs propios de la UI con contratos verificados por muestras JSON generadas desde los tipos de la API. | Aceptada (confirmada por el propietario) | [DASHBOARD.md](DASHBOARD.md) |
+| D-080  | 2026-10-02 | Honestidad de datos en la UI: sin excepciones hacia componentes, "—" para ausentes, frescura visible, "No disponible" sin datos viejos, régimen "No implementado". | Aceptada (confirmada por el propietario) | [ADR-016](decisions/ADR-016-monitoring-dashboard.md) |
 
 ## ADRs
 
@@ -93,7 +98,7 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-004](decisions/ADR-004-ml-python-onnx.md) | ML con Python y ONNX | Aceptado |
 | [ADR-005](decisions/ADR-005-backtesting.md) | Backtesting | Aceptado |
 | [ADR-006](decisions/ADR-006-blazor-ui.md) | UI con Blazor | Aceptado |
-| ADR-007 | Actualizaciones en tiempo real de la UI | No redactado (cuando exista la primera función en tiempo real) |
+| [ADR-007](decisions/ADR-007-realtime-ui.md) | Actualizaciones en tiempo real de la UI | Aceptado |
 | [ADR-008](decisions/ADR-008-market-state-and-backfill.md) | Estado de mercado, frescura y relleno de huecos | Aceptado |
 | [ADR-009](decisions/ADR-009-feature-engine.md) | Motor de features | Aceptado |
 | [ADR-010](decisions/ADR-010-baseline-and-evaluation.md) | Estrategia base y protocolo de evaluación | Aceptado |
@@ -102,3 +107,4 @@ Decisiones tomadas o propuestas durante el desarrollo. Las decisiones mayores ti
 | [ADR-013](decisions/ADR-013-risk-engine.md) | Risk Engine | Aceptado |
 | [ADR-014](decisions/ADR-014-monte-carlo.md) | Monte Carlo para análisis de escenarios | Aceptado |
 | [ADR-015](decisions/ADR-015-paper-trading.md) | Paper trading | Aceptado |
+| [ADR-016](decisions/ADR-016-monitoring-dashboard.md) | Panel de monitoreo | Aceptado |

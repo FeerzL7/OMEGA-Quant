@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Omega.Api.Contracts;
 using Omega.Api.Endpoints;
 using System.Text.Json.Serialization;
 using Omega.Application.Backtesting;
@@ -58,10 +59,17 @@ builder.Services.AddSingleton(new ResearchPaths(
     Path.GetFullPath(configuration["Research:DatasetsDirectory"] ?? Path.Combine(researchRoot, "datasets")),
     Path.GetFullPath(configuration["Research:ModelsDirectory"] ?? Path.Combine(researchRoot, "models"))));
 
+builder.Services.AddSingleton(services => new Omega.Application.Monitoring.SystemHealthService(
+    services.GetRequiredService<ICandleStore>(),
+    services.GetRequiredService<MarketStateService>(),
+    services.GetRequiredService<Omega.Execution.Paper.IPaperTradingStore>(),
+    services.GetRequiredService<ResearchPaths>().ModelsDirectory,
+    services.GetRequiredService<TimeProvider>()));
+
 builder.Services.AddSingleton(services => new MonteCarloService(services.GetRequiredService<IBacktestRunStore>()));
 
 // Enums as names in every response (readable, stable across enum reordering).
-builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.ConfigureHttpJsonOptions(options => ApiJson.Configure(options.SerializerOptions));
 
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
@@ -86,6 +94,7 @@ app.MapDatasetEndpoints();
 app.MapModelEndpoints();
 app.MapRiskEndpoints();
 app.MapPaperEndpoints();
+app.MapMonitoringEndpoints();
 
 await app.RunAsync();
 return 0;

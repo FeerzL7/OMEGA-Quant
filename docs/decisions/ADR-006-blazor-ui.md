@@ -77,6 +77,9 @@ balance de costos es el mejor **para este proyecto en este momento**.
 
 ## Decisión pendiente: modo de renderizado interactivo
 
+> **Resuelta en la Fase 13:** Interactive Server, con refresco por consulta a la API. Ver
+> [ADR-016](ADR-016-monitoring-dashboard.md) y [ADR-007](ADR-007-realtime-ui.md).
+
 Se tomará cuando aparezca la primera función que requiera interactividad o actualizaciones en vivo (a más
 tardar en la Fase 12 o 13), junto con ADR-007 (tiempo real).
 

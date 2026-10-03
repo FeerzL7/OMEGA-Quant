@@ -1,0 +1,223 @@
+@page "/paper/{Name}"
+@inherits LivePanel
+@inject OmegaApiClient Api
+
+<PageTitle>OMEGA Quant — @Name</PageTitle>
+<h1 class="page-title">Sesión de paper: @Name</h1>
+<p class="updated">Actualizado @Display.Utc(RefreshedAtUtc) · <a href="/?session=@Name">ver en el panel</a></p>
+
+@if (_session is { IsOk: true } r)
+{
+    var s = r.Value!;
+    <section class="section">
+        <div class="metric-row">
+            <Metric Label="Estrategia" Value="@s.Strategy" />
+            <Metric Label="Equity" Value="@Display.Money(s.LastEquity)" Hint="@($"caja {Display.Money(s.Cash)} · máximo {Display.Money(s.PeakEquity)}")" />
+            <Metric Label="Drawdown" Value="@Display.Percent(s.Drawdown)" Tone="@(s.Drawdown < 0 ? "warn" : null)" />
+            <Metric Label="Velas procesadas" Value="@s.CandlesProcessed.ToString()" Hint="@($"última {Display.Utc(s.LastCandleOpenTimeUtc)}")" />
+            <Metric Label="Posición" Value="@(s.Position is { } p ? $"{Display.Quantity(p.Quantity)} @ {Display.Price(p.EntryPrice)}" : "plana")"
+                    Hint="@(s.Position is { } q ? $"stop {Display.Price(q.StopLoss)} · objetivo {Display.Price(q.TakeProfit)} · {q.HoldingCandles} velas" : (s.EntryPending ? "entrada pendiente" : null))" />
+            <Metric Label="Racha de pérdidas" Value="@s.ConsecutiveLosses.ToString()" />
+        </div>
+    </section>
+
+    <section class="section killswitch @(s.KillSwitch.Active ? "is-active" : "")" aria-labelledby="ks-title">
+        <h2 id="ks-title">Kill switch</h2>
+        @if (s.KillSwitch.Active)
+        {
+            <p><span class="tag tag-down">ACTIVO</span> desde @Display.Utc(s.KillSwitch.TrippedAtUtc): @s.KillSwitch.Reason. No se abren posiciones nuevas; las abiertas conservan su stop.</p>
+        }
+        else
+        {
+            <p><span class="tag tag-ok">inactivo</span> @ResetNote(s.KillSwitch)</p>
+        }
+
+        <div class="ks-form">
+            <label>Motivo <input class="field" @bind="_reason" @bind:event="oninput" maxlength="200" placeholder="obligatorio" /></label>
+            <label>Autor <input class="field" @bind="_author" @bind:event="oninput" maxlength="60" placeholder="obligatorio" /></label>
+            <label class="confirm"><input type="checkbox" @bind="_confirmed" />
+                @(s.KillSwitch.Active ? "Confirmo que el motivo de la activación está resuelto y que se pueden abrir posiciones de nuevo." : "Confirmo que quiero detener las entradas nuevas.")
+            </label>
+            <button class="action @(s.KillSwitch.Active ? "" : "danger")" disabled="@(!CanSend)" @onclick="ToggleKillSwitchAsync">
+                @(s.KillSwitch.Active ? "Rearmar kill switch" : "Activar kill switch")
+            </button>
+        </div>
+        @if (_sent is not null)
+        {
+            <p class="@(_sent.IsOk ? "muted" : "api-problem")" role="status">
+                @(_sent.IsOk ? $"Comando #{_sent.Value!.CommandId} enviado. {_sent.Value.Note}" : "No se pudo enviar: " + _sent.Problem)
+            </p>
+        }
+
+        @if (_commands is { IsOk: true } c && c.Value!.Count > 0)
+        {
+            <table class="data">
+                <thead><tr><th>#</th><th>Comando</th><th>Motivo</th><th>Autor</th><th>Pedido (UTC)</th><th>Aplicado (UTC)</th><th>Resultado</th></tr></thead>
+                <tbody>
+                    @foreach (var command in c.Value.Take(10))
+                    {
+                        <tr>
+                            <td>@command.Id</td><td>@command.Type</td><td>@command.Reason</td><td>@command.RequestedBy</td>
+                            <td>@Display.Utc(command.RequestedAtUtc)</td>
+                            <td>@(command.AppliedAtUtc is null ? "pendiente" : Display.Utc(command.AppliedAtUtc))</td>
+                            <td>@command.Result</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section class="section">
+        <h2>Diario de decisiones</h2>
+        @if (_decisions is { IsOk: true } d)
+        {
+            <div class="scroll">
+                <table class="data">
+                    <thead><tr><th>Vela (UTC)</th><th>Señal</th><th>Acción</th><th class="num">P cruda</th><th class="num">P calibrada</th><th class="num">EV</th><th>Motivo</th><th class="num">Equity</th><th>Notas</th></tr></thead>
+                    <tbody>
+                        @foreach (var decision in d.Value!)
+                        {
+                            var n = DecisionNumbers.From(decision.Metrics);
+                            <tr>
+                                <td>@Display.Utc(decision.CandleOpenTimeUtc)</td>
+                                <td>@Display.Direction(decision.Direction)</td>
+                                <td>@Home.ActionLabel(decision.Action)</td>
+                                <td class="num">@Display.Percent(n.RawProbability, 1)</td>
+                                <td class="num">@Display.Percent(n.CalibratedProbability, 1)</td>
+                                <td class="num">@Display.Percent(n.ExpectedReturn, 3, signed: true)</td>
+                                <td>@(decision.RiskCode ?? decision.NoTradeReason)</td>
+                                <td class="num">@Display.Money(decision.Equity)</td>
+                                <td class="muted">@string.Join(" · ", decision.Notes)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <ApiProblem Status="@(_decisions?.Status ?? ApiStatus.Unavailable)" Problem="@_decisions?.Problem" />
+        }
+    </section>
+
+    <section class="section">
+        <h2>Operaciones</h2>
+        @if (_trades is { IsOk: true } t && t.Value!.Count > 0)
+        {
+            <div class="scroll">
+                <table class="data">
+                    <thead><tr><th>Entrada (UTC)</th><th class="num">Precio</th><th class="num">Cantidad</th><th class="num">Stop</th><th class="num">Objetivo</th><th>Salida (UTC)</th><th class="num">Precio</th><th>Motivo</th><th class="num">Velas</th><th class="num">Comisiones</th><th class="num">PnL neto</th></tr></thead>
+                    <tbody>
+                        @foreach (var trade in t.Value)
+                        {
+                            <tr>
+                                <td>@Display.Utc(trade.EntryCandleOpenTimeUtc)</td>
+                                <td class="num">@Display.Price(trade.EntryPrice)</td>
+                                <td class="num">@Display.Quantity(trade.Quantity)</td>
+                                <td class="num">@Display.Price(trade.StopLossPrice)</td>
+                                <td class="num">@Display.Price(trade.TakeProfitPrice)</td>
+                                <td>@Display.Utc(trade.ExitCandleOpenTimeUtc)</td>
+                                <td class="num">@Display.Price(trade.ExitPrice)</td>
+                                <td>@trade.ExitReason</td>
+                                <td class="num">@trade.HoldingCandles</td>
+                                <td class="num">@Display.Price(trade.EntryFee + trade.ExitFee)</td>
+                                <td class="num @(trade.NetPnl >= 0 ? "pos" : "neg")">@Display.SignedMoney(trade.NetPnl)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="empty">Sin operaciones cerradas.</p>
+        }
+    </section>
+
+    <section class="section">
+        <h2>Órdenes</h2>
+        @if (_orders is { IsOk: true } o && o.Value!.Count > 0)
+        {
+            <div class="scroll">
+                <table class="data">
+                    <thead><tr><th>Orden</th><th>Lado</th><th>Tipo</th><th class="num">Cantidad</th><th class="num">Precio límite/stop</th><th class="num">Llenado medio</th><th>Estado</th><th>Ciclo de vida</th></tr></thead>
+                    <tbody>
+                        @foreach (var view in o.Value)
+                        {
+                            <tr>
+                                <td>@view.Order.ClientOrderId</td>
+                                <td>@view.Order.Side</td>
+                                <td>@view.Order.Type</td>
+                                <td class="num">@Display.Quantity(view.Order.Quantity)</td>
+                                <td class="num">@Display.Price(view.Order.StopPrice ?? view.Order.LimitPrice)</td>
+                                <td class="num">@Display.Price(view.Order.AverageFillPrice)</td>
+                                <td>@view.Order.Status</td>
+                                <td class="muted">@string.Join(" → ", view.Events.Select(e => e.Status))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="empty">Sin órdenes.</p>
+        }
+    </section>
+}
+else
+{
+    <ApiProblem Status="@(_session?.Status ?? ApiStatus.Unavailable)" Problem="@_session?.Problem" />
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = string.Empty;
+
+    private ApiResult<PaperSessionDto>? _session;
+    private ApiResult<IReadOnlyList<PaperDecisionDto>>? _decisions;
+    private ApiResult<IReadOnlyList<PaperTradeDto>>? _trades;
+    private ApiResult<IReadOnlyList<PaperOrderViewDto>>? _orders;
+    private ApiResult<IReadOnlyList<PaperCommandDto>>? _commands;
+    private ApiResult<KillSwitchAcceptedDto>? _sent;
+    private string _reason = string.Empty;
+    private string _author = string.Empty;
+    private bool _confirmed;
+    private bool _sending;
+
+    private static string? ResetNote(PaperKillSwitchDto killSwitch) =>
+        killSwitch.ResetBy is null ? null : "(último rearme: " + killSwitch.ResetBy + ")";
+
+    private bool CanSend => !_sending && _confirmed && !string.IsNullOrWhiteSpace(_reason) && !string.IsNullOrWhiteSpace(_author);
+
+    protected override async Task LoadAsync(CancellationToken ct)
+    {
+        var session = Api.PaperSessionAsync(Name, ct);
+        var decisions = Api.DecisionsAsync(Name, 100, ct);
+        var trades = Api.TradesAsync(Name, 100, ct);
+        var orders = Api.OrdersAsync(Name, 50, ct);
+        var commands = Api.CommandsAsync(Name, 10, ct);
+        await Task.WhenAll(session, decisions, trades, orders, commands);
+        (_session, _decisions, _trades, _orders, _commands) = (session.Result, decisions.Result, trades.Result, orders.Result, commands.Result);
+    }
+
+    /// <summary>Trips an inactive kill switch, resets an active one (state as last read from the API).</summary>
+    private Task ToggleKillSwitchAsync() =>
+        _session is { IsOk: true } current ? SendAsync(current.Value!.KillSwitch.Active ? "reset" : "trip") : Task.CompletedTask;
+
+    private async Task SendAsync(string action)
+    {
+        if (!CanSend)
+        {
+            return;
+        }
+
+        _sending = true;
+        _sent = await Api.KillSwitchAsync(Name, action, _reason.Trim(), _author.Trim(), Stopping);
+        _sending = false;
+        if (_sent.IsOk)
+        {
+            (_reason, _confirmed) = (string.Empty, false);
+        }
+    }
+}

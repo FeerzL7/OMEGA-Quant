@@ -1,0 +1,33 @@
+@if (string.IsNullOrEmpty(Model.Points))
+{
+    <div class="chart-empty">Sin datos.</div>
+}
+else
+{
+    <svg class="chart chart-line" viewBox="0 0 @F(Model.Width) @F(Model.Height)" role="img" aria-label="@AriaLabel" preserveAspectRatio="none">
+        @foreach (var tick in Model.ValueTicks)
+        {
+            <line class="grid" x1="@F(Charts.LeftMargin)" x2="@F(Model.Width - Charts.RightMargin)" y1="@F(tick.Position)" y2="@F(tick.Position)" />
+            <SvgText Class="axis" X="@(Model.Width - Charts.RightMargin + 4)" Y="@(tick.Position + 3)" Value="@tick.Label" />
+        }
+        @foreach (var tick in Model.TimeTicks)
+        {
+            <SvgText Class="axis" X="@tick.Position" Y="@(Model.Height - 6)" Anchor="middle" Value="@tick.Label" />
+        }
+        @if (Model.ZeroY is { } zero)
+        {
+            <line class="zero" x1="@F(Charts.LeftMargin)" x2="@F(Model.Width - Charts.RightMargin)" y1="@F(zero)" y2="@F(zero)" />
+        }
+        <polyline class="series @SeriesClass" points="@Model.Points" />
+    </svg>
+}
+
+@code {
+    [Parameter, EditorRequired] public LineChartModel Model { get; set; } = null!;
+
+    [Parameter] public string AriaLabel { get; set; } = "Gráfico";
+
+    [Parameter] public string SeriesClass { get; set; } = string.Empty;
+
+    private static string F(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

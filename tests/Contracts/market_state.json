@@ -1,0 +1,25 @@
+{
+  "symbol": "BTCUSDT",
+  "interval": "5m",
+  "evaluatedAtUtc": "2026-09-15T12:00:00+00:00",
+  "isReliable": false,
+  "issues": [
+    "Data is stale."
+  ],
+  "freshness": "Stale",
+  "dataAgeSeconds": 420.5,
+  "nextCloseExpectedUtc": "2026-09-15T11:58:00+00:00",
+  "lastClosedCandle": {
+    "openTimeUtc": "2026-09-15T11:55:00+00:00",
+    "closeTimeUtc": "2026-09-15T11:59:59.999+00:00",
+    "open": 63527.02,
+    "high": 63582.02,
+    "low": 63502.02,
+    "close": 63542.02,
+    "baseVolume": 13,
+    "quoteVolume": 640000,
+    "tradeCount": 1199
+  },
+  "integrityWindowStartUtc": "2026-09-14T12:00:00+00:00",
+  "recentGaps": []
+}

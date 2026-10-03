@@ -1,0 +1,48 @@
+@page "/paper"
+@inherits LivePanel
+@inject OmegaApiClient Api
+
+<PageTitle>OMEGA Quant — Paper trading</PageTitle>
+<h1 class="page-title">Sesiones de paper trading</h1>
+<p class="updated">Actualizado @Display.Utc(RefreshedAtUtc)</p>
+
+@if (_sessions is { IsOk: true } s)
+{
+    if (s.Value!.Count == 0)
+    {
+        <p class="notice notice-warn">No hay sesiones. Arranca el Worker con <code>Trading__Mode=Paper</code>.</p>
+    }
+    else
+    {
+        <div class="scroll">
+            <table class="data">
+                <thead><tr><th>Sesión</th><th>Estrategia</th><th class="num">Velas</th><th class="num">Equity</th><th class="num">Drawdown</th><th>Posición</th><th>Kill switch</th><th>Última vela (UTC)</th></tr></thead>
+                <tbody>
+                    @foreach (var session in s.Value)
+                    {
+                        <tr>
+                            <td><a href="/paper/@session.Name">@session.Name</a></td>
+                            <td>@session.Strategy</td>
+                            <td class="num">@session.CandlesProcessed</td>
+                            <td class="num">@Display.Money(session.LastEquity)</td>
+                            <td class="num">@Display.Percent(session.Drawdown)</td>
+                            <td>@(session.Position is null ? "plana" : "abierta")</td>
+                            <td>@if (session.KillSwitch.Active) { <span class="tag tag-down">ACTIVO</span> } else { <span class="tag tag-ok">inactivo</span> }</td>
+                            <td>@Display.Utc(session.LastCandleOpenTimeUtc)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <ApiProblem Status="@(_sessions?.Status ?? ApiStatus.Unavailable)" Problem="@_sessions?.Problem" />
+}
+
+@code {
+    private ApiResult<IReadOnlyList<PaperSessionDto>>? _sessions;
+
+    protected override async Task LoadAsync(CancellationToken ct) => _sessions = await Api.PaperSessionsAsync(ct);
+}

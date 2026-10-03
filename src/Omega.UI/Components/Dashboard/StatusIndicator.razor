@@ -5,7 +5,7 @@
     <span class="state">@StateText</span>
     @if (!string.IsNullOrWhiteSpace(Detail))
     {
-        <span class="detail">@Detail</span>
+        <span class="detail" title="@Basis">@Detail</span>
     }
 </div>
 
@@ -15,6 +15,9 @@
     [Parameter] public IndicatorState State { get; set; } = IndicatorState.NotAvailable;
 
     [Parameter] public string? Detail { get; set; }
+
+    /// <summary>How the state was judged (shown as a tooltip).</summary>
+    [Parameter] public string? Basis { get; set; }
 
     private string StateText => State switch
     {

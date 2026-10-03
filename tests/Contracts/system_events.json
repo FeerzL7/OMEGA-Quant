@@ -1,0 +1,12 @@
+[
+  {
+    "occurredAtUtc": "2026-09-15T12:00:00+00:00",
+    "source": "MarketData",
+    "eventType": "CANDLE_GAP_DETECTED",
+    "severity": "Warning",
+    "message": "Gap of 3 candles detected.",
+    "details": {
+      "missing": "3"
+    }
+  }
+]

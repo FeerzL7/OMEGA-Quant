@@ -1,0 +1,29 @@
+{
+  "checkedAtUtc": "2026-09-15T12:00:00+00:00",
+  "components": [
+    {
+      "name": "database",
+      "state": "Healthy",
+      "detail": "Query succeeded.",
+      "basis": "A query to the candle store."
+    },
+    {
+      "name": "marketData",
+      "state": "Degraded",
+      "detail": "Stale.",
+      "basis": "Freshness of stored candles."
+    },
+    {
+      "name": "paperWorker",
+      "state": "Down",
+      "detail": "Last update 40 min ago.",
+      "basis": "Session update age."
+    },
+    {
+      "name": "model",
+      "state": "NotAvailable",
+      "detail": "No session uses a model.",
+      "basis": "Model package files."
+    }
+  ]
+}

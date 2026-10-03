@@ -17,7 +17,7 @@
         "chart  signal"
         "risk   risk"
         "recent recent"
-        "system system";
+        "orders system";
 }
 
 ::deep .area-market { grid-area: market; }
@@ -26,6 +26,7 @@
 ::deep .area-risk { grid-area: risk; }
 ::deep .area-recent { grid-area: recent; }
 ::deep .area-system { grid-area: system; }
+::deep .area-orders { grid-area: orders; }
 
 .market-strip {
     display: flex;
@@ -104,6 +105,20 @@
             "chart"
             "risk"
             "recent"
+            "orders"
             "system";
     }
 }
+
+.signal-state .signal-action { font-size: 0.75rem; font-weight: 400; color: var(--muted); margin-left: 0.5rem; }
+.signal-long { color: var(--ok); }
+.signal-short { color: var(--down); }
+.signal-reason { font-size: 0.78rem; margin: 0.6rem 0 0; }
+.signal-explanation { font-size: 0.72rem; margin: 0.3rem 0 0; }
+.chart-note { font-size: 0.7rem; margin: 0.3rem 0 0; }
+.two-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+h3 { font-size: 0.78rem; margin: 0.6rem 0 0.35rem; color: var(--text-dim); }
+.events { list-style: none; margin: 0; padding: 0; font-size: 0.75rem; }
+.events li { padding: 0.15rem 0; border-bottom: 1px solid var(--line); }
+.event-warning .tag { border-color: var(--warn); color: var(--warn); }
+.event-error .tag, .event-critical .tag { border-color: var(--down); color: var(--down); }

@@ -1,0 +1,114 @@
+{
+  "runId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "strategy": "baseline-ema-trend",
+  "periodLabel": "development",
+  "backtestMaxDrawdownDepth": 0.031,
+  "result": {
+    "options": {
+      "method": "Bootstrap",
+      "paths": 200,
+      "horizonTrades": null,
+      "blockLength": 5,
+      "ruinLevel": 0.5,
+      "extraCostBps": 0,
+      "skipProbability": 0,
+      "seed": 20261001
+    },
+    "sourceTrades": 3,
+    "horizonTrades": 3,
+    "initialCapital": 10000,
+    "terminalEquity": {
+      "mean": 10071.770872399982,
+      "min": 9821.07784,
+      "p5": 9919.881440000001,
+      "p25": 9979.1636,
+      "p50": 10079.5576,
+      "p75": 10139.794,
+      "p95": 10241.804,
+      "max": 10303.01
+    },
+    "terminalReturn": {
+      "mean": 0.007177087240000012,
+      "min": -0.017892216000000016,
+      "p5": -0.008011855999999873,
+      "p25": -0.0020836400000000532,
+      "p50": 0.007955759999999978,
+      "p75": 0.013979399999999975,
+      "p95": 0.024180400000000102,
+      "max": 0.03030099999999991
+    },
+    "maxDrawdownDepth": {
+      "mean": 0.006159683959999982,
+      "min": 0,
+      "p5": 0,
+      "p25": 0.006000000000000005,
+      "p50": 0.006000000000000005,
+      "p75": 0.0065029640000000555,
+      "p95": 0.011963999999999975,
+      "max": 0.017892216000000016
+    },
+    "longestLosingStreak": {
+      "mean": 1.02,
+      "min": 0,
+      "p5": 0,
+      "p25": 1,
+      "p50": 1,
+      "p75": 1,
+      "p95": 2,
+      "max": 3
+    },
+    "probabilityOfLoss": 0.285,
+    "probabilityOfRuin": 0,
+    "killSwitchDrawdownLimit": 0.2,
+    "probabilityKillSwitch": 0,
+    "original": {
+      "terminalEquity": 10079.5576,
+      "maxDrawdownDepth": 0.006000000000000005,
+      "longestLosingStreak": 1
+    },
+    "equityBands": [
+      {
+        "trade": 0,
+        "p5": 10000,
+        "p25": 10000,
+        "p50": 10000,
+        "p75": 10000,
+        "p95": 10000
+      },
+      {
+        "trade": 1,
+        "p5": 9940,
+        "p25": 9940,
+        "p50": 10040,
+        "p75": 10100,
+        "p95": 10100
+      },
+      {
+        "trade": 2,
+        "p5": 9880.36,
+        "p25": 9979.76,
+        "p50": 10039.4,
+        "p75": 10140.4,
+        "p95": 10201
+      },
+      {
+        "trade": 3,
+        "p5": 9919.881440000001,
+        "p25": 9979.1636,
+        "p50": 10079.5576,
+        "p75": 10139.794,
+        "p95": 10241.804
+      }
+    ],
+    "assumptions": [
+      "Scenarios recombine the trades of one backtest; they cannot contain market behaviour that the backtest did not see.",
+      "Bootstrap and shuffle treat trades as exchangeable; block bootstrap keeps short-range dependence only up to the block length.",
+      "Equity is measured between trades: drawdowns inside a trade (adverse excursions) are not seen, so depths are lower bounds of what the account would show candle by candle.",
+      "Daily-loss and losing-streak limits of the Risk Engine are not simulated (resampled trades have no dates); the kill-switch probability is the share of paths whose drawdown reaches the policy\u0027s limit.",
+      "Each trade keeps its return relative to the equity before it (fixed-fractional sizing), so results compound."
+    ]
+  },
+  "notices": [
+    "These scenarios recombine the 3 trades of backtest ...; they are not a forecast."
+  ]
+}

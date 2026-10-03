@@ -1,0 +1,7 @@
+.section { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 0.6rem 0.75rem; margin-bottom: 0.7rem; }
+h2 { font-size: 0.85rem; margin: 0 0 0.5rem; }
+.metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem 1rem; }
+.killswitch.is-active { border-color: var(--down); }
+.ks-form { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: flex-end; margin: 0.5rem 0; font-size: 0.8rem; }
+.ks-form label { display: flex; flex-direction: column; gap: 0.2rem; color: var(--muted); }
+.ks-form label.confirm { flex-direction: row; align-items: center; gap: 0.4rem; color: var(--text-dim); max-width: 40rem; }

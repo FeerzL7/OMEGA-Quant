@@ -1,0 +1,135 @@
+{
+  "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "createdAtUtc": "2026-09-15T12:00:00+00:00",
+  "periodLabel": "development",
+  "tradingStartUtc": "2026-09-14T11:00:00+00:00",
+  "tradingEndUtc": "2026-09-15T12:00:00+00:00",
+  "notices": [
+    "Only 3 trade(s) (fewer than 30): the statistics cannot distinguish skill from chance."
+  ],
+  "result": {
+    "strategy": {
+      "name": "baseline-ema-trend",
+      "version": "1",
+      "parameters": {
+        "trendFast": "ema_20",
+        "trendSlow": "ema_50",
+        "stopAtr": "2",
+        "targetAtr": "3",
+        "atr": "atr_14",
+        "timeoutCandles": "48"
+      }
+    },
+    "featureSetVersion": "features-v1",
+    "featureSetHash": "819bc256623440f246410d642166162e7acd7945518c261f7bd4b17b58c6615c",
+    "config": {
+      "initialCapital": 10000,
+      "feeRate": 0.001,
+      "spreadBps": 1,
+      "slippageBps": 2,
+      "quantityStep": null,
+      "minNotional": null,
+      "maxHoldingCandles": 48,
+      "filters": {
+        "quantityStep": null,
+        "minQuantity": null,
+        "minNotional": null
+      },
+      "costs": {
+        "feeRate": 0.001,
+        "spreadBps": 1,
+        "slippageBps": 2,
+        "marketOrder": 0.00125,
+        "limitOrder": 0.001
+      }
+    },
+    "dataset": {
+      "symbol": "BTCUSDT",
+      "interval": "FiveMinutes",
+      "firstOpenTimeUtc": "2026-09-14T11:00:00+00:00",
+      "lastOpenTimeUtc": "2026-09-15T11:55:00+00:00",
+      "candleCount": 300,
+      "sha256": "ab287ea3e19f315434a270a9be1714eb77abd688a6272b0aafc3592ae25aeab1"
+    },
+    "trades": [],
+    "equityCurve": [
+      {
+        "timeUtc": "2026-09-14T11:04:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timeUtc": "2026-09-14T15:14:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timeUtc": "2026-09-14T19:24:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timeUtc": "2026-09-14T23:34:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timeUtc": "2026-09-15T03:44:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timeUtc": "2026-09-15T07:54:59.999+00:00",
+        "equity": 10000,
+        "drawdown": 0
+      }
+    ],
+    "rejections": [],
+    "noTradeCounts": {
+      "FeaturesUnavailable": 249
+    },
+    "warnings": [],
+    "metrics": {
+      "initialCapital": 10000,
+      "finalEquity": 10000,
+      "netProfit": 0,
+      "totalReturn": 0,
+      "tradeCount": 0,
+      "winningTrades": 0,
+      "winRate": null,
+      "grossProfit": 0,
+      "grossLoss": 0,
+      "profitFactor": null,
+      "expectancy": null,
+      "maxDrawdown": 0,
+      "sharpe": null,
+      "sortino": null,
+      "totalFees": 0,
+      "exposure": 0
+    },
+    "statistics": {
+      "tradeCount": 0,
+      "meanReturn": null,
+      "standardDeviation": null,
+      "tStatistic": null,
+      "bootstrapCi95Lower": null,
+      "bootstrapCi95Upper": null
+    },
+    "risk": {
+      "riskPerTrade": 0.01,
+      "maxPositionFraction": 1,
+      "maxOpenPositions": 1,
+      "maxExposureFraction": 1,
+      "maxDailyLoss": 0.03,
+      "maxDrawdown": 0.20,
+      "maxConsecutiveLosses": 6,
+      "maxSpreadBps": 10,
+      "maxSlippageBps": 25
+    },
+    "riskSummary": {
+      "rejectionsByCheck": {},
+      "killSwitchTrippedAtUtc": null,
+      "killSwitchReason": null
+    }
+  }
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "openTimeUtc": "2026-09-15T11:45:00+00:00",
+    "closeTimeUtc": "2026-09-15T11:49:59.999+00:00",
+    "open": 63637.61,
+    "high": 63692.61,
+    "low": 63612.61,
+    "close": 63652.61,
+    "baseVolume": 11,
+    "quoteVolume": 640000,
+    "tradeCount": 1197
+  },
+  {
+    "openTimeUtc": "2026-09-15T11:50:00+00:00",
+    "closeTimeUtc": "2026-09-15T11:54:59.999+00:00",
+    "open": 63545.5,
+    "high": 63600.5,
+    "low": 63520.5,
+    "close": 63560.5,
+    "baseVolume": 12,
+    "quoteVolume": 640000,
+    "tradeCount": 1198
+  },
+  {
+    "openTimeUtc": "2026-09-15T11:55:00+00:00",
+    "closeTimeUtc": "2026-09-15T11:59:59.999+00:00",
+    "open": 63527.02,
+    "high": 63582.02,
+    "low": 63502.02,
+    "close": 63542.02,
+    "baseVolume": 13,
+    "quoteVolume": 640000,
+    "tradeCount": 1199
+  }
+]

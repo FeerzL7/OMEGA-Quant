@@ -1,0 +1,18 @@
+@inherits LivePanel
+@inject OmegaApiClient Api
+
+@* The trading mode comes from the API. If the API does not answer, say so: never a stale or guessed mode. *@
+@if (_status is { IsOk: true } s)
+{
+    <span class="mode mode-@s.Value!.TradingMode.ToLowerInvariant()" title="Modo configurado en Omega.Api">Modo: @s.Value.TradingMode</span>
+}
+else
+{
+    <span class="mode mode-unknown" role="status" title="@_status?.Problem">API no disponible</span>
+}
+
+@code {
+    private ApiResult<SystemStatusDto>? _status;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken) => _status = await Api.StatusAsync(cancellationToken);
+}

@@ -56,3 +56,42 @@ a { color: var(--focus); }
 @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
 }
+
+/* ---- Phase 13: shared dashboard styles ---- */
+.notice { margin: 0 0 0.75rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--neutral); background: var(--panel); color: var(--text-dim); font-size: 0.8rem; max-width: 100ch; }
+.notice-warn { border-left-color: var(--warn); }
+.notice-down { border-left-color: var(--down); color: var(--text); }
+
+.chart { width: 100%; height: 100%; min-height: 15rem; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 0.5; }
+.chart .zero { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .axis { fill: var(--muted); font-size: 10px; }
+.chart .up line, .chart .up rect { stroke: var(--ok); fill: var(--ok); }
+.chart .down line, .chart .down rect { stroke: var(--down); fill: var(--down); }
+.chart .level { stroke-width: 1; stroke-dasharray: 5 3; }
+.chart .level-label { font-size: 10px; }
+.chart .level-entry { stroke: var(--text-dim); fill: var(--text-dim); }
+.chart .level-stop { stroke: var(--down); fill: var(--down); }
+.chart .level-target { stroke: var(--ok); fill: var(--ok); }
+.chart .series { fill: none; stroke: var(--focus); stroke-width: 1.4; }
+.chart .series.series-down { stroke: var(--down); }
+.chart-empty { min-height: 10rem; display: grid; place-items: center; color: var(--muted); font-size: 0.8rem; border: 1px dashed var(--line-strong); }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+table.data th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line-strong); padding: 0.25rem 0.4rem; white-space: nowrap; }
+table.data td { border-bottom: 1px solid var(--line); padding: 0.25rem 0.4rem; vertical-align: top; }
+table.data td.num, table.data th.num { text-align: right; }
+.pos { color: var(--ok); }
+.neg { color: var(--down); }
+.muted { color: var(--muted); }
+.scroll { overflow-x: auto; }
+.tag { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--line-strong); border-radius: 2px; font-size: 0.72rem; }
+.tag-down { border-color: var(--down); color: var(--down); }
+.tag-ok { border-color: var(--ok); color: var(--ok); }
+.tag-warn { border-color: var(--warn); color: var(--warn); }
+.updated { color: var(--muted); font-size: 0.72rem; margin: 0 0 0.6rem; }
+
+input.field, select.field { background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: 2px; padding: 0.3rem 0.45rem; font: inherit; font-size: 0.85rem; }
+button.action { background: var(--panel); color: var(--text); border: 1px solid var(--line-strong); border-radius: 2px; padding: 0.3rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
+button.action:disabled { opacity: 0.45; cursor: not-allowed; }
+button.action.danger { border-color: var(--down); color: var(--down); }

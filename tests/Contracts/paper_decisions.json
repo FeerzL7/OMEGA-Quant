@@ -1,0 +1,35 @@
+[
+  {
+    "candleOpenTimeUtc": "2026-09-15T11:55:00+00:00",
+    "direction": "Long",
+    "noTradeReason": null,
+    "explanation": "P raw 0.61, calibrated 0.58; EV \u002B0.0012.",
+    "metrics": {
+      "raw_probability": 0.61,
+      "calibrated_probability": 0.58,
+      "expected_return": 0.0012,
+      "gain": 0.008,
+      "loss": -0.004,
+      "costs": 0.0026
+    },
+    "action": "RISK_REJECTED",
+    "riskCode": "RISK_KILL_SWITCH",
+    "riskDetail": "Kill switch active.",
+    "equity": 10250.5,
+    "notes": [
+      "STALE: processed late."
+    ]
+  },
+  {
+    "candleOpenTimeUtc": "2026-09-15T11:50:00+00:00",
+    "direction": "NoTrade",
+    "noTradeReason": "ExpectedValueTooLow",
+    "explanation": null,
+    "metrics": {},
+    "action": "NO_TRADE",
+    "riskCode": null,
+    "riskDetail": null,
+    "equity": 10240,
+    "notes": []
+  }
+]

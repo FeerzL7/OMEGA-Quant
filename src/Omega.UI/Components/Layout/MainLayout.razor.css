@@ -1,34 +1,15 @@
-.shell {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
 
 .topbar {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    display: flex; align-items: center; gap: 1.25rem;
+    padding: 0.55rem 1rem; border-bottom: 1px solid var(--line); background: var(--panel);
 }
 
-.brand {
-    font-weight: 650;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
-}
+.brand { font-weight: 650; font-size: 0.95rem; letter-spacing: 0.02em; }
 
-.mode {
-    color: var(--muted);
-    font-size: 0.8rem;
-    border: 1px dashed var(--line-strong);
-    padding: 0.1rem 0.5rem;
-    border-radius: 2px;
-}
+.nav { display: flex; gap: 0.9rem; flex: 1; font-size: 0.85rem; }
 
-.workspace {
-    flex: 1;
-    padding: 0.75rem;
-}
+.nav ::deep a { color: var(--text-dim); text-decoration: none; padding: 0.15rem 0; border-bottom: 2px solid transparent; }
+.nav ::deep a.active { color: var(--text); border-bottom-color: var(--focus); }
+
+.workspace { flex: 1; padding: 0.75rem; }

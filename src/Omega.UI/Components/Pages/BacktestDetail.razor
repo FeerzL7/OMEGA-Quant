@@ -1,0 +1,123 @@
+@page "/backtests/{Id:guid}"
+@inject OmegaApiClient Api
+
+<PageTitle>OMEGA Quant — Backtest</PageTitle>
+<h1 class="page-title">Backtest</h1>
+<p><a href="/backtests">← todos los backtests</a></p>
+
+@if (_run is { IsOk: true } r)
+{
+    var run = r.Value!;
+    var m = run.Result.Metrics;
+    <p class="muted">
+        @run.Result.Strategy.Name v@(run.Result.Strategy.Version) · periodo <span class="tag">@run.PeriodLabel</span>
+        @Display.Utc(run.TradingStartUtc) → @Display.Utc(run.TradingEndUtc) · features @run.Result.FeatureSetVersion
+    </p>
+    @foreach (var notice in run.Notices)
+    {
+        <p class="notice notice-warn">@notice</p>
+    }
+
+    <section class="section">
+        <div class="metric-row">
+            <Metric Label="Retorno total" Value="@Display.Percent(m.TotalReturn, 2, true)" Tone="@(m.TotalReturn >= 0 ? "ok" : "down")" />
+            <Metric Label="Beneficio neto" Value="@Display.SignedMoney(m.NetProfit)" Hint="@($"capital inicial {Display.Money(m.InitialCapital)}")" />
+            <Metric Label="Operaciones" Value="@m.TradeCount.ToString()" Hint="@($"{m.WinningTrades} ganadoras · {m.LosingTrades} perdedoras")" />
+            <Metric Label="Tasa de acierto" Value="@Display.Percent(m.WinRate, 1)" />
+            <Metric Label="Profit factor" Value="@(m.ProfitFactor?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" />
+            <Metric Label="Expectativa" Value="@Display.SignedMoney(m.Expectancy)" Hint="por operación" />
+            <Metric Label="Drawdown máximo" Value="@Display.Percent(m.MaxDrawdown, 2)" Hint="vela a vela" />
+            <Metric Label="Sharpe / Sortino" Value="@($"{m.Sharpe?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ?? Display.Missing} / {m.Sortino?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ?? Display.Missing}")" Hint="anualizados" />
+            <Metric Label="Comisiones" Value="@Display.Money(m.TotalFees)" />
+            <Metric Label="Exposición" Value="@Display.Percent(m.Exposure, 1)" Hint="tiempo con posición" />
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Equity</h2>
+        <LineChart Model="@Charts.Line([.. run.Result.EquityCurve.Select(p => (p.TimeUtc, (double)p.Equity))], 900, 220)" AriaLabel="Curva de equity" />
+        <h2>Drawdown</h2>
+        <LineChart Model="@Charts.Line([.. run.Result.EquityCurve.Select(p => (p.TimeUtc, (double)p.Drawdown))], 900, 140, includeZero: true)" AriaLabel="Curva de drawdown" SeriesClass="series-down" />
+        <p class="muted chart-note">La curva guardada tiene un punto por día (UTC); las métricas se calcularon con la curva completa.</p>
+    </section>
+
+    <section class="section">
+        <h2>Monte Carlo</h2>
+        <p class="muted">Recombina las @m.TradeCount operaciones de este backtest para ver el rango de resultados posibles con ellas. No es una predicción.</p>
+        <div class="mc-buttons">
+            <button class="action" disabled="@_running" @onclick="RunBootstrapAsync">Bootstrap</button>
+            <button class="action" disabled="@_running" @onclick="RunBlocksAsync">Por bloques</button>
+            <button class="action" disabled="@_running" @onclick="RunShuffleAsync">Permutación</button>
+        </div>
+        @if (_monteCarlo is { IsOk: true } mc)
+        {
+            var res = mc.Value!.Result;
+            <div class="metric-row">
+                <Metric Label="Retorno final P5 / P50 / P95" Value="@($"{Display.Percent(res.TerminalReturn.P5, 1, true)} / {Display.Percent(res.TerminalReturn.P50, 1, true)} / {Display.Percent(res.TerminalReturn.P95, 1, true)}")" />
+                <Metric Label="Drawdown P50 / P95" Value="@($"{Display.Percent(res.MaxDrawdownDepth.P50, 1)} / {Display.Percent(res.MaxDrawdownDepth.P95, 1)}")" Hint="@($"original vela a vela: {Display.Percent(mc.Value.BacktestMaxDrawdownDepth, 1)}")" />
+                <Metric Label="P(pérdida)" Value="@Display.Percent(res.ProbabilityOfLoss, 1)" />
+                <Metric Label="P(ruina)" Value="@Display.Percent(res.ProbabilityOfRuin, 1)" />
+                <Metric Label="P(kill switch)" Value="@Display.Percent(res.ProbabilityKillSwitch, 1)" />
+                <Metric Label="Racha de pérdidas P95" Value="@res.LongestLosingStreak.P95.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" />
+            </div>
+            @foreach (var notice in mc.Value.Notices)
+            {
+                <p class="notice">@notice</p>
+            }
+        }
+        else if (_monteCarlo is not null)
+        {
+            <ApiProblem Status="@_monteCarlo.Status" Problem="@_monteCarlo.Problem" />
+        }
+    </section>
+
+    <section class="section">
+        <h2>Operaciones (@run.Result.Trades.Count)</h2>
+        <div class="scroll">
+            <table class="data">
+                <thead><tr><th>Entrada (UTC)</th><th class="num">Precio</th><th>Salida (UTC)</th><th class="num">Precio</th><th>Motivo</th><th class="num">Velas</th><th class="num">PnL neto</th></tr></thead>
+                <tbody>
+                    @foreach (var trade in run.Result.Trades.Take(200))
+                    {
+                        <tr>
+                            <td>@Display.Utc(trade.EntryCandleOpenTimeUtc)</td>
+                            <td class="num">@Display.Price(trade.EntryPrice)</td>
+                            <td>@Display.Utc(trade.ExitCandleOpenTimeUtc)</td>
+                            <td class="num">@Display.Price(trade.ExitPrice)</td>
+                            <td>@trade.ExitReason</td>
+                            <td class="num">@trade.HoldingCandles</td>
+                            <td class="num @(trade.NetPnl >= 0 ? "pos" : "neg")">@Display.SignedMoney(trade.NetPnl)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+else
+{
+    <ApiProblem Status="@(_run?.Status ?? ApiStatus.Unavailable)" Problem="@_run?.Problem" />
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ApiResult<BacktestRunDto>? _run;
+    private ApiResult<MonteCarloOutcomeDto>? _monteCarlo;
+    private bool _running;
+
+    protected override async Task OnParametersSetAsync() => _run = await Api.BacktestAsync(Id, CancellationToken.None);
+
+    private Task RunBootstrapAsync() => RunMonteCarloAsync("bootstrap");
+
+    private Task RunBlocksAsync() => RunMonteCarloAsync("block-bootstrap");
+
+    private Task RunShuffleAsync() => RunMonteCarloAsync("shuffle");
+
+    private async Task RunMonteCarloAsync(string method)
+    {
+        _running = true;
+        _monteCarlo = await Api.MonteCarloAsync(Id, method, CancellationToken.None);
+        _running = false;
+    }
+}

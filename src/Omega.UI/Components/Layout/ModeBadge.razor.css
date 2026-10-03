@@ -1,0 +1,4 @@
+.mode { font-size: 0.78rem; padding: 0.12rem 0.55rem; border: 1px solid var(--line-strong); border-radius: 2px; color: var(--text-dim); white-space: nowrap; }
+.mode-paper { border-color: var(--warn); color: var(--warn); }
+.mode-live, .mode-testnet { border-color: var(--down); color: var(--down); font-weight: 650; }
+.mode-unknown { border-style: dashed; color: var(--down); }

@@ -11,6 +11,10 @@ Las reglas de desarrollo del proyecto están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Estado
 
+**Fase 13 — Panel de monitoreo.** Panel en Blazor (Interactive Server) con mercado, velas, señal, probabilidades, EV,
+riesgo, posiciones, órdenes, salud del sistema, eventos, sesiones de paper (con kill switch) y backtests. Lee el sistema
+solo a través de la API. Ver [`docs/DASHBOARD.md`](docs/DASHBOARD.md).
+
 **Fase 12 — Paper trading.** El Worker en modo `Paper` ejecuta el pipeline completo sobre cada vela cerrada (features →
 estrategia → riesgo → decisión → ejecución simulada → diario), con las mismas reglas de llenado que el backtester,
 estado persistido y kill switch operable desde la API. Ver [`docs/PAPER_TRADING.md`](docs/PAPER_TRADING.md).
@@ -113,6 +117,7 @@ curl -X POST http://localhost:5080/api/backtests -H "Content-Type: application/j
 * `GET /api/paper/sessions` (y `/{name}`, `/trades`, `/decisions`, `/orders`, `/commands`): sesiones de paper trading.
   `POST /api/paper/sessions/{name}/kill-switch` activa o rearma el kill switch (motivo y autor obligatorios).
   **La API no tiene autenticación: exponla solo en `localhost`.**
+* `GET /api/market/{symbol}/{interval}/candles`, `GET /api/system/health`, `GET /api/system/events`: datos del panel.
 * `GET /api/risk/limits`: política de riesgo vigente (sección `Risk` de la configuración). En
   `POST /api/backtests`, `"risk": { "maxDailyLoss": 0.01, ... }` cambia límites solo para esa ejecución.
 * `GET /api/models`: modelos registrados y si están listos para el valor esperado (ONNX, calibración y perfil).
@@ -207,4 +212,5 @@ La responsabilidad de cada proyecto y las reglas de dependencia están en
 * [`docs/RISK_MODEL.md`](docs/RISK_MODEL.md)
 * [`docs/MONTE_CARLO.md`](docs/MONTE_CARLO.md)
 * [`docs/PAPER_TRADING.md`](docs/PAPER_TRADING.md)
+* [`docs/DASHBOARD.md`](docs/DASHBOARD.md)
 * [`docs/decisions/`](docs/decisions/)

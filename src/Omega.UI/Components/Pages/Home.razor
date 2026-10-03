@@ -1,70 +1,338 @@
 @page "/"
+@inherits LivePanel
+@inject OmegaApiClient Api
 
-<PageTitle>OMEGA Quant</PageTitle>
-
+<PageTitle>OMEGA Quant — Panel</PageTitle>
 <h1 class="visually-hidden">Panel de OMEGA Quant</h1>
 
-<p class="notice">
-    Fase 0: estructura del panel sin datos. Ningún valor de esta pantalla proviene del mercado,
-    de un modelo o de una cuenta. Cada sección indica la fase del roadmap que la alimentará.
+<p class="updated">
+    Actualizado @Display.Utc(RefreshedAtUtc) · cada @Options.RefreshInterval.TotalSeconds s ·
+    @if (_session is not null)
+    {
+        <text>sesión de paper <a href="/paper/@_session.Name">@_session.Name</a> (@_session.Strategy)</text>
+    }
+    else
+    {
+        <text>sin sesión de paper</text>
+    }
 </p>
+
+@if (_sessions is { IsOk: true } && _session is null)
+{
+    <p class="notice notice-warn">No hay ninguna sesión de paper trading. Arranca el Worker con <code>Trading__Mode=Paper</code> para ver señal, riesgo y órdenes.</p>
+}
 
 <div class="dashboard">
 
-    <DashboardPanel Title="Mercado" AvailableFrom="Fase 1" CssClass="area-market">
-        <div class="market-strip">
-            <div class="instrument">
-                <span class="symbol">BTCUSDT</span>
-                <span class="venue">Binance Spot, velas de 5 min</span>
+    <DashboardPanel Title="Mercado" CssClass="area-market">
+        @if (_market is { IsOk: true } m)
+        {
+            var state = m.Value!;
+            var last = state.LastClosedCandle;
+            var freshness = DataAge.OfCandle(last?.CloseTimeUtc, Time.GetUtcNow(), Options.IntervalLength, Options.FreshnessGrace);
+            <div class="market-strip">
+                <div class="instrument">
+                    <span class="symbol">@state.Symbol</span>
+                    <span class="venue">Binance Spot, velas de @state.Interval</span>
+                </div>
+                <Metric Label="Último cierre" Value="@Display.Price(last?.Close)" Hint="USDT" />
+                <Metric Label="Última vela cerrada" Value="@Display.Utc(last?.OpenTimeUtc)" />
+                <Metric Label="Frescura de datos" Value="@DataAge.Label(freshness)" Hint="@Display.Age(last is null ? null : Time.GetUtcNow() - last.CloseTimeUtc)" Tone="@FreshnessTone(freshness)" />
+                <Metric Label="Integridad" Value="@(state.IsReliable ? "fiable" : "no fiable")" Tone="@(state.IsReliable ? "ok" : "down")" Hint="@(state.Issues.Count == 0 ? null : string.Join(" ", state.Issues))" />
             </div>
-            <MetricPlaceholder Label="Precio" Unit="USDT" />
-            <MetricPlaceholder Label="Última vela cerrada" Unit="UTC" />
-            <MetricPlaceholder Label="Frescura de datos" Unit="s" />
+        }
+        else
+        {
+            <ApiProblem Status="@(_market?.Status ?? ApiStatus.Unavailable)" Problem="@_market?.Problem" />
+        }
+    </DashboardPanel>
+
+    <DashboardPanel Title="Gráfico de precio" CssClass="area-chart">
+        @if (_candles is { IsOk: true } c)
+        {
+            <CandleChart Model="@Chart(c.Value!)" AriaLabel="@($"Velas de {Options.Symbol}")" />
+            <p class="muted chart-note">Últimas @c.Value!.Count velas cerradas · eje de precio ajustado al rango visible (+5 %) · horas en UTC</p>
+        }
+        else
+        {
+            <ApiProblem Status="@(_candles?.Status ?? ApiStatus.Unavailable)" Problem="@_candles?.Problem" />
+        }
+    </DashboardPanel>
+
+    <DashboardPanel Title="Señal" CssClass="area-signal">
+        @if (_decisions is { IsOk: true } d && d.Value!.Count > 0)
+        {
+            var latest = d.Value[0];
+            var n = DecisionNumbers.From(latest.Metrics);
+            <div class="signal-state signal-@latest.Direction.ToLowerInvariant()">
+                @Display.Direction(latest.Direction)
+                <span class="signal-action">@ActionLabel(latest.Action)</span>
+            </div>
+            <div class="metric-grid">
+                <Metric Label="Probabilidad cruda" Value="@Display.Percent(n.RawProbability, 1)" Hint="del modelo, sin calibrar" />
+                <Metric Label="Probabilidad calibrada" Value="@Display.Percent(n.CalibratedProbability, 1)" />
+                <Metric Label="Valor esperado" Value="@Display.Percent(n.ExpectedReturn, 3, signed: true)" Hint="por operación, después de costos" Tone="@(n.ExpectedReturn is > 0 ? "ok" : n.ExpectedReturn is null ? null : "warn")" />
+                <Metric Label="Régimen de mercado" Value="No implementado" Hint="ningún componente lo calcula todavía" />
+                <Metric Label="Estrategia / modelo" Value="@_session?.Strategy" />
+                <Metric Label="Vela de la señal" Value="@Display.Utc(latest.CandleOpenTimeUtc)" Hint="@Display.Age(Time.GetUtcNow() - latest.CandleOpenTimeUtc)" />
+            </div>
+            @if (latest.NoTradeReason is not null || latest.RiskCode is not null)
+            {
+                <p class="signal-reason">Motivo: <strong>@(latest.RiskCode ?? latest.NoTradeReason)</strong> @(latest.RiskDetail)</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(latest.Explanation))
+            {
+                <p class="muted signal-explanation">@latest.Explanation</p>
+            }
+        }
+        else if (_decisions is { IsOk: false } bad)
+        {
+            <ApiProblem Status="@bad.Status" Problem="@bad.Problem" />
+        }
+        else
+        {
+            <p class="empty">Sin decisiones registradas.</p>
+        }
+    </DashboardPanel>
+
+    <DashboardPanel Title="Riesgo" CssClass="area-risk">
+        @if (_session is { } s)
+        {
+            var lastPrice = _market?.Value?.LastClosedCandle?.Close;
+            var exposure = s.Position is { } p && lastPrice is { } price ? p.Quantity * price : 0m;
+            var dailyPnl = s.LastEquity - s.DayStartEquity;
+            <div class="metric-row">
+                <Metric Label="Equity" Value="@Display.Money(s.LastEquity)" Hint="@($"caja {Display.Money(s.Cash)}")" />
+                <Metric Label="P&L del día (UTC)" Value="@Display.SignedMoney(dailyPnl)" Hint="@Display.Percent(s.DayStartEquity == 0 ? null : dailyPnl / s.DayStartEquity, 2, true)" Tone="@(dailyPnl < 0 ? "warn" : null)" />
+                <Metric Label="Drawdown" Value="@Display.Percent(s.Drawdown, 2)" Hint="@($"límite {Display.Percent(_limits?.Value?.MaxDrawdown, 0)}")" Tone="@(s.Drawdown < 0 ? "warn" : null)" />
+                <Metric Label="Exposición" Value="@Display.Money(exposure)" Hint="@Display.Percent(s.LastEquity == 0 ? null : exposure / s.LastEquity, 0)" />
+                <Metric Label="Posiciones abiertas" Value="@(s.Position is null ? "0" : "1")" Hint="@($"máximo {_limits?.Value?.MaxOpenPositions}")" />
+                <Metric Label="Kill switch" Value="@(s.KillSwitch.Active ? "ACTIVO" : "inactivo")" Tone="@(s.KillSwitch.Active ? "down" : "ok")" Hint="@s.KillSwitch.Reason" />
+                <Metric Label="Racha de pérdidas" Value="@s.ConsecutiveLosses.ToString()" Hint="@($"límite {_limits?.Value?.MaxConsecutiveLosses}")" />
+                <Metric Label="Pérdida diaria máx." Value="@Display.Percent(_limits?.Value?.MaxDailyLoss, 1)" Hint="@($"riesgo por operación {Display.Percent(_limits?.Value?.RiskPerTrade, 1)}")" />
+            </div>
+        }
+        else
+        {
+            <p class="empty">Sin sesión de paper: no hay estado de riesgo que mostrar.</p>
+        }
+    </DashboardPanel>
+
+    <DashboardPanel Title="Operaciones y decisiones recientes" CssClass="area-recent">
+        <div class="two-columns">
+            <div class="scroll">
+                <h3>Operaciones cerradas</h3>
+                @if (_trades is { IsOk: true } t && t.Value!.Count > 0)
+                {
+                    <table class="data">
+                        <thead><tr><th>Entrada (UTC)</th><th class="num">Precio</th><th>Salida</th><th class="num">Precio</th><th class="num">Velas</th><th class="num">PnL neto</th></tr></thead>
+                        <tbody>
+                            @foreach (var trade in t.Value.Take(10))
+                            {
+                                <tr>
+                                    <td>@Display.Utc(trade.EntryCandleOpenTimeUtc)</td>
+                                    <td class="num">@Display.Price(trade.EntryPrice)</td>
+                                    <td>@trade.ExitReason</td>
+                                    <td class="num">@Display.Price(trade.ExitPrice)</td>
+                                    <td class="num">@trade.HoldingCandles</td>
+                                    <td class="num @(trade.NetPnl >= 0 ? "pos" : "neg")">@Display.SignedMoney(trade.NetPnl)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="empty">Sin operaciones cerradas.</p>
+                }
+            </div>
+            <div class="scroll">
+                <h3>Decisiones</h3>
+                @if (_decisions is { IsOk: true } ds && ds.Value!.Count > 0)
+                {
+                    <table class="data">
+                        <thead><tr><th>Vela (UTC)</th><th>Señal</th><th>Acción</th><th>Detalle</th></tr></thead>
+                        <tbody>
+                            @foreach (var decision in ds.Value.Take(12))
+                            {
+                                <tr>
+                                    <td>@Display.Utc(decision.CandleOpenTimeUtc)</td>
+                                    <td>@Display.Direction(decision.Direction)</td>
+                                    <td>@ActionLabel(decision.Action)</td>
+                                    <td class="muted">@(decision.RiskCode ?? decision.NoTradeReason)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="empty">Sin decisiones.</p>
+                }
+            </div>
         </div>
     </DashboardPanel>
 
-    <DashboardPanel Title="Gráfico de precio" AvailableFrom="Fase 13" CssClass="area-chart">
-        <div class="empty-chart">
-            Sin datos de mercado. El gráfico se conectará cuando existan velas persistidas
-            y una API que las exponga.
-        </div>
-    </DashboardPanel>
-
-    <DashboardPanel Title="Señal" AvailableFrom="Fases 6 a 9" CssClass="area-signal">
-        <div class="signal-state">Sin señal</div>
-        <div class="metric-grid">
-            <MetricPlaceholder Label="Probabilidad cruda" Unit="%" />
-            <MetricPlaceholder Label="Probabilidad calibrada" Unit="%" />
-            <MetricPlaceholder Label="Valor esperado" Unit="% por operación" />
-            <MetricPlaceholder Label="Régimen de mercado" />
-            <MetricPlaceholder Label="Versión del modelo" />
-            <MetricPlaceholder Label="Hora de la señal" Unit="UTC" />
-        </div>
-    </DashboardPanel>
-
-    <DashboardPanel Title="Riesgo" AvailableFrom="Fase 10" CssClass="area-risk">
-        <div class="metric-row">
-            <MetricPlaceholder Label="Equity" Unit="USDT" />
-            <MetricPlaceholder Label="P&amp;L diario" Unit="USDT" />
-            <MetricPlaceholder Label="Drawdown" Unit="%" />
-            <MetricPlaceholder Label="Exposición" Unit="USDT" />
-            <MetricPlaceholder Label="Posiciones abiertas" />
-            <MetricPlaceholder Label="Kill switch" />
-        </div>
-    </DashboardPanel>
-
-    <DashboardPanel Title="Señales y operaciones recientes" AvailableFrom="Fase 12" CssClass="area-recent">
-        <p class="empty">No hay registros. El historial aparecerá con el paper trading.</p>
+    <DashboardPanel Title="Órdenes vivas" CssClass="area-orders">
+        @if (_orders is { IsOk: true } o)
+        {
+            var working = o.Value!.Where(v => v.Order.Status is "Acknowledged" or "PartiallyFilled").ToList();
+            if (working.Count == 0)
+            {
+                <p class="empty">Ninguna orden viva.</p>
+            }
+            else
+            {
+                <table class="data">
+                    <thead><tr><th>Orden</th><th>Lado</th><th>Tipo</th><th class="num">Cantidad</th><th class="num">Precio</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        @foreach (var view in working)
+                        {
+                            <tr>
+                                <td>@view.Order.ClientOrderId</td>
+                                <td>@view.Order.Side</td>
+                                <td>@view.Order.Type</td>
+                                <td class="num">@Display.Quantity(view.Order.Quantity)</td>
+                                <td class="num">@Display.Price(view.Order.StopPrice ?? view.Order.LimitPrice)</td>
+                                <td>@view.Order.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+        else if (_session is null)
+        {
+            <p class="empty">Sin sesión de paper.</p>
+        }
+        else
+        {
+            <ApiProblem Status="@(_orders?.Status ?? ApiStatus.Unavailable)" Problem="@_orders?.Problem" />
+        }
     </DashboardPanel>
 
     <DashboardPanel Title="Sistema" CssClass="area-system">
         <div class="system-grid">
-            <StatusIndicator Label="Omega.Api" Detail="La UI aún no la consulta" />
-            <StatusIndicator Label="Worker" Detail="La UI aún no lo consulta" />
-            <StatusIndicator Label="Binance" Detail="Fase 1" />
-            <StatusIndicator Label="Base de datos" Detail="Fase 2" />
-            <StatusIndicator Label="Modelo" Detail="Fase 7" />
+            <StatusIndicator Label="Omega.Api" State="@(_health is { IsOk: true } ? IndicatorState.Healthy : IndicatorState.Down)" Detail="@(_health is { IsOk: true } ? "Responde." : _health?.Problem)" />
+            @if (_health is { IsOk: true } h)
+            {
+                @foreach (var component in h.Value!.Components)
+                {
+                    <StatusIndicator Label="@ComponentLabel(component.Name)" State="@Indicator(component.State)" Detail="@component.Detail" Basis="@component.Basis" />
+                }
+            }
         </div>
+        <h3>Eventos recientes</h3>
+        @if (_events is { IsOk: true } ev && ev.Value!.Count > 0)
+        {
+            <ul class="events">
+                @foreach (var e in ev.Value.Take(10))
+                {
+                    <li class="event-@e.Severity.ToLowerInvariant()"><span class="muted">@Display.Utc(e.OccurredAtUtc)</span> <span class="tag">@e.Severity</span> @e.Source: @e.Message</li>
+                }
+            </ul>
+        }
+        else if (_events is { IsOk: false } bad)
+        {
+            <ApiProblem Status="@bad.Status" Problem="@bad.Problem" />
+        }
+        else
+        {
+            <p class="empty">Sin eventos registrados.</p>
+        }
     </DashboardPanel>
 
 </div>
+
+@code {
+    private ApiResult<MarketStateDto>? _market;
+    private ApiResult<IReadOnlyList<CandleDto>>? _candles;
+    private ApiResult<SystemHealthDto>? _health;
+    private ApiResult<IReadOnlyList<SystemEventDto>>? _events;
+    private ApiResult<IReadOnlyList<PaperSessionDto>>? _sessions;
+    private ApiResult<IReadOnlyList<PaperDecisionDto>>? _decisions;
+    private ApiResult<IReadOnlyList<PaperTradeDto>>? _trades;
+    private ApiResult<IReadOnlyList<PaperOrderViewDto>>? _orders;
+    private ApiResult<RiskLimitsDto>? _limits;
+    private PaperSessionDto? _session;
+
+    [SupplyParameterFromQuery(Name = "session")] public string? SessionName { get; set; }
+
+    protected override async Task LoadAsync(CancellationToken ct)
+    {
+        var market = Api.MarketStateAsync(Options.Symbol, Options.Interval, ct);
+        var candles = Api.CandlesAsync(Options.Symbol, Options.Interval, Options.ChartCandles, ct);
+        var health = Api.HealthAsync(Options.Symbol, Options.Interval, ct);
+        var events = Api.EventsAsync(10, ct);
+        var sessions = Api.PaperSessionsAsync(ct);
+        var limits = Api.RiskLimitsAsync(ct);
+        await Task.WhenAll(market, candles, health, events, sessions, limits);
+        (_market, _candles, _health, _events, _sessions, _limits) = (market.Result, candles.Result, health.Result, events.Result, sessions.Result, limits.Result);
+
+        _session = _sessions.IsOk
+            ? _sessions.Value!.FirstOrDefault(s => s.Name == SessionName) ?? _sessions.Value!.OrderByDescending(s => s.UpdatedAtUtc).FirstOrDefault()
+            : null;
+
+        if (_session is { } session)
+        {
+            var decisions = Api.DecisionsAsync(session.Name, 12, ct);
+            var trades = Api.TradesAsync(session.Name, 10, ct);
+            var orders = Api.OrdersAsync(session.Name, 20, ct);
+            await Task.WhenAll(decisions, trades, orders);
+            (_decisions, _trades, _orders) = (decisions.Result, trades.Result, orders.Result);
+        }
+        else
+        {
+            (_decisions, _trades, _orders) = (null, null, null);
+        }
+    }
+
+    private CandleChartModel Chart(IReadOnlyList<CandleDto> candles)
+    {
+        var levels = new List<(decimal, string, string)>();
+        if (_session?.Position is { } p)
+        {
+            levels.Add((p.EntryPrice, "entrada " + Display.Price(p.EntryPrice), "entry"));
+            levels.Add((p.StopLoss, "stop " + Display.Price(p.StopLoss), "stop"));
+            if (p.TakeProfit is { } target) levels.Add((target, "objetivo " + Display.Price(target), "target"));
+        }
+
+        return Charts.Candles([.. candles.Select(c => (c.OpenTimeUtc, c.Open, c.High, c.Low, c.Close))], 900, 300, levels);
+    }
+
+    private static string? FreshnessTone(Freshness freshness) => freshness switch
+    {
+        Freshness.Fresh => "ok",
+        Freshness.Late => "warn",
+        Freshness.Stale => "down",
+        _ => null,
+    };
+
+    internal static string ActionLabel(string action) => action switch
+    {
+        "ENTRY_SCHEDULED" => "entrada programada",
+        "EXIT_SCHEDULED" => "salida programada",
+        "RISK_REJECTED" => "rechazada por riesgo",
+        "NO_TRADE" => "sin operar",
+        "HOLD" => "mantener",
+        "IGNORED" => "ignorada",
+        _ => action,
+    };
+
+    internal static IndicatorState Indicator(string state) => state switch
+    {
+        "Healthy" => IndicatorState.Healthy,
+        "Degraded" => IndicatorState.Degraded,
+        "Down" => IndicatorState.Down,
+        _ => IndicatorState.NotAvailable,
+    };
+
+    private static string ComponentLabel(string name) => name switch
+    {
+        "database" => "Base de datos",
+        "marketData" => "Datos de mercado",
+        "paperWorker" => "Worker de paper",
+        "model" => "Modelo",
+        _ => name,
+    };
+}

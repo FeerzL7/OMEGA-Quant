@@ -1,0 +1,39 @@
+@* Candlesticks as SVG. Geometry: Presentation.Charts (unit-tested). *@
+@if (Model.Candles.Count == 0)
+{
+    <div class="chart-empty">Sin velas almacenadas.</div>
+}
+else
+{
+    <svg class="chart" viewBox="0 0 @F(Model.Width) @F(Model.Height)" role="img" aria-label="@AriaLabel" preserveAspectRatio="none">
+        @foreach (var tick in Model.PriceTicks)
+        {
+            <line class="grid" x1="@F(Charts.LeftMargin)" x2="@F(Model.Width - Charts.RightMargin)" y1="@F(tick.Position)" y2="@F(tick.Position)" />
+            <SvgText Class="axis" X="@(Model.Width - Charts.RightMargin + 4)" Y="@(tick.Position + 3)" Value="@tick.Label" />
+        }
+        @foreach (var tick in Model.TimeTicks)
+        {
+            <SvgText Class="axis" X="@tick.Position" Y="@(Model.Height - 6)" Anchor="middle" Value="@tick.Label" />
+        }
+        @foreach (var c in Model.Candles)
+        {
+            <g class="@(c.Rising ? "up" : "down")">
+                <line x1="@F(c.X)" x2="@F(c.X)" y1="@F(c.WickTop)" y2="@F(c.WickBottom)" />
+                <rect x="@F(c.X - (c.Width / 2))" y="@F(c.BodyTop)" width="@F(c.Width)" height="@F(Math.Max(1, c.BodyBottom - c.BodyTop))" />
+            </g>
+        }
+        @foreach (var level in Model.Levels)
+        {
+            <line class="level level-@level.Kind" x1="@F(Charts.LeftMargin)" x2="@F(Model.Width - Charts.RightMargin)" y1="@F(level.Y)" y2="@F(level.Y)" />
+            <SvgText Class="@($"level-label level-{level.Kind}")" X="@(Charts.LeftMargin + 4)" Y="@(level.Y - 3)" Value="@level.Label" />
+        }
+    </svg>
+}
+
+@code {
+    [Parameter, EditorRequired] public CandleChartModel Model { get; set; } = null!;
+
+    [Parameter] public string AriaLabel { get; set; } = "Gráfico de velas";
+
+    private static string F(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

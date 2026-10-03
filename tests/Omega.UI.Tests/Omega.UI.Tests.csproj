@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Omega.UI\Omega.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JSON produced from the API's real response types (tests/Omega.Api.Tests/Contracts). -->
+    <EmbeddedResource Include="..\Contracts\*.json" LogicalName="contracts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

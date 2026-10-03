@@ -1,0 +1,7 @@
+.metric { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.label { color: var(--muted); font-size: 0.72rem; }
+.value { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.hint { color: var(--muted); font-size: 0.7rem; }
+.tone-ok .value { color: var(--ok); }
+.tone-warn .value { color: var(--warn); }
+.tone-down .value { color: var(--down); }

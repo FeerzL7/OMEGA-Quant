@@ -1,0 +1,12 @@
+[
+  {
+    "id": 7,
+    "sessionId": "11111111-2222-3333-4444-555555555555",
+    "type": "TripKillSwitch",
+    "reason": "exchange incident",
+    "requestedBy": "fer",
+    "requestedAtUtc": "2026-09-15T11:49:00+00:00",
+    "appliedAtUtc": "2026-09-15T11:50:00+00:00",
+    "result": "Kill switch tripped."
+  }
+]

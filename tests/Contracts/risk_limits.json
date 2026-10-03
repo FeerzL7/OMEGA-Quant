@@ -1,0 +1,11 @@
+{
+  "riskPerTrade": 0.01,
+  "maxPositionFraction": 1,
+  "maxOpenPositions": 1,
+  "maxExposureFraction": 1,
+  "maxDailyLoss": 0.03,
+  "maxDrawdown": 0.20,
+  "maxConsecutiveLosses": 6,
+  "maxSpreadBps": 10,
+  "maxSlippageBps": 25
+}

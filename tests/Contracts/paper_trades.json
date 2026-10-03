@@ -1,0 +1,17 @@
+[
+  {
+    "entryCandleOpenTimeUtc": "2026-09-15T09:00:00+00:00",
+    "entryPrice": 64000,
+    "quantity": 0.15,
+    "entryFee": 9.6,
+    "stopLossPrice": 63500,
+    "takeProfitPrice": 64800,
+    "exitCandleOpenTimeUtc": "2026-09-15T10:00:00+00:00",
+    "exitPrice": 64800,
+    "exitFee": 9.72,
+    "exitReason": "TakeProfit",
+    "holdingCandles": 12,
+    "netPnl": 100.68,
+    "entryExplanation": "Uptrend."
+  }
+]

@@ -9,4 +9,9 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Presentation logic (chart geometry, formatting) is unit-tested. -->
+    <InternalsVisibleTo Include="Omega.UI.Tests" />
+  </ItemGroup>
+
 </Project>

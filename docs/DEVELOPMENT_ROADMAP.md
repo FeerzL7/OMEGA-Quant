@@ -26,8 +26,8 @@ Solo después de una validación suficiente se consideran capacidades de ejecuci
 | 10   | Risk Engine                         | **Completada** |
 | 11   | Monte Carlo                         | **Completada** |
 | 12   | Paper Trading                       | **Completada** |
-| 13   | Monitoring Dashboard                | Siguiente     |
-| 14   | Testnet                             | Pendiente     |
+| 13   | Monitoring Dashboard                | **Completada** |
+| 14   | Testnet                             | Siguiente     |
 | 15   | Live Readiness                      | Pendiente     |
 | 16   | Controlled Live                     | Pendiente     |
 
@@ -140,6 +140,16 @@ siguiente sin instrucción del propietario.
   decisión del modo interactivo de Blazor (ADR-006) y del mecanismo de tiempo real (ADR-007) se plantearán al inicio.
 * Riesgo abierto: la API no tiene autenticación y permite rearmar el kill switch; exponerla solo en `localhost` hasta la
   Fase 15.
+
+### Notas de la Fase 13
+
+* Decisiones: [ADR-016](decisions/ADR-016-monitoring-dashboard.md), [ADR-007](decisions/ADR-007-realtime-ui.md). Guía:
+  [DASHBOARD.md](DASHBOARD.md).
+* **Pendiente del propietario:** abrir el panel en un navegador (`dotnet run --project src/Omega.UI`) y confirmar el
+  refresco en vivo y el botón del kill switch; en el sandbox solo se pudo verificar el HTML prerenderizado.
+* La Fase 14 (Testnet) solo debe empezar cuando el paper trading haya demostrado estabilidad técnica con datos reales
+  (roadmap). Requiere credenciales de Testnet (user-secrets), un `TestnetExecutionProvider` con reconciliación de órdenes,
+  los filtros reales del exchange (`exchangeInfo`) y el stream de datos de usuario: decisiones que se plantearán al inicio.
 
 ---
 

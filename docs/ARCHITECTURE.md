@@ -1,6 +1,6 @@
 # Arquitectura de OMEGA Quant
 
-Estado: Fase 12 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
+Estado: Fase 13 completada. Este documento describe la estructura que existe hoy y las reglas que deben mantenerse
 en las fases siguientes. Las decisiones mayores están en [`decisions/`](decisions/) y en
 [`DECISION_LOG.md`](DECISION_LOG.md).
 
@@ -34,7 +34,7 @@ atraviesa por fuera.**
 | `Omega.Application`    | Librería            | Orquestación del pipeline; usa módulos de dominio y abstracciones de Core.        | Ingesta, relleno de huecos, estado de mercado, monitor de frescura, `FeatureService`, `BacktestService`, `DatasetBuilder` |
 | `Omega.Infrastructure` | Librería            | PostgreSQL, repositorios, integraciones externas, persistencia.                  | Npgsql: migrador, repositorios de velas, eventos y backtests (ADR-002); composición compartida |
 | `Omega.Api`            | Host ASP.NET Core   | Frontera HTTP del sistema: consultas y comandos controlados.                     | `/health`, `/api/system/status`, `/api/market/{symbol}/{interval}/state`, `/api/features/catalog`, `/api/market/{symbol}/{interval}/features/latest`, `/api/strategies`, `/api/backtests`, `/api/datasets`, `/api/models`, `/api/risk/limits` |
-| `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel placeholder sin datos |
+| `Omega.UI`             | Host Blazor         | Presentación e interacción. Sin lógica de trading.                               | Panel de monitoreo (Interactive Server, ADR-016): vistas de mercado, señal, riesgo, paper, backtests y salud |
 | `Omega.Worker`         | Host de servicio    | Procesos en segundo plano (datos, features, estrategia, paper trading, monitoreo). | Aplica migraciones; ingesta y monitor de frescura; en modo Paper, `PaperTradingWorker`; rechaza Testnet/Live |
 
 ## 4. Reglas de dependencia
@@ -123,8 +123,8 @@ CORRECTO:    UI → API → Application → Risk Engine → Decision Engine → 
   proceso). `/api/system/status` expone el modo configurado. `/api/market/{symbol}/{interval}/state` expone el
   estado de mercado (400 con entrada inválida, 503 si la base no está disponible, sin detalles internos). Al
   arrancar verifica el esquema de la base, igual que el Worker.
-* **UI**: Blazor Web App con renderizado estático en servidor (sin interactividad). El modo interactivo se
-  decidirá cuando exista la primera función que lo requiera (ver ADR-006).
+* **UI**: Blazor Web App en modo **Interactive Server** (ADR-016). Lee el sistema solo por HTTP desde Omega.Api
+  (`OmegaApiClient`) y refresca cada 5 s (ADR-007); sin referencias a proyectos.
 * **Worker**: raíz de composición. Al arrancar verifica el esquema de la base (y aplica migraciones si
   `Database:ApplyMigrationsOnStartup` lo permite); si no coincide con el código, termina con código 1.
   Después aloja `MarketDataIngestionService`. Ninguna vela llega todavía a estrategia, riesgo ni ejecución.
@@ -144,7 +144,17 @@ Detalle y justificación en [ADR-003](decisions/ADR-003-binance.md).
 * `ReadEventsAsync` recibe la última vela conocida (la última persistida): no la repite y reporta como hueco lo
   que falte desde ella, también entre reinicios.
 
-## 7.2 Paper trading (Fase 12)
+## 7.2 Panel de monitoreo (Fase 13)
+
+Decisiones en [ADR-016](decisions/ADR-016-monitoring-dashboard.md) y [ADR-007](decisions/ADR-007-realtime-ui.md);
+guía en [DASHBOARD.md](DASHBOARD.md).
+
+* `Omega.UI`: Interactive Server; `OmegaApiClient` (nunca lanza excepciones a los componentes), DTOs propios,
+  `LivePanel` (refresco periódico), gráficos SVG (`Presentation.Charts`), vistas `/`, `/paper`, `/backtests`.
+* `Omega.Api`: velas recientes, salud del sistema (`SystemHealthService` en Application) y eventos.
+* Contratos API ↔ UI verificados con muestras JSON generadas desde los tipos reales (`tests/Contracts`).
+
+## 7.3 Paper trading (Fase 12)
 
 Decisiones en [ADR-015](decisions/ADR-015-paper-trading.md); guía en [PAPER_TRADING.md](PAPER_TRADING.md).
 
@@ -155,7 +165,7 @@ Decisiones en [ADR-015](decisions/ADR-015-paper-trading.md); guía en [PAPER_TRA
 * `PaperTradingWorker` (Worker, solo en modo Paper) y `/api/paper/...` (consultas y comando del kill switch).
 * Migración 0003: sesiones, órdenes y eventos, operaciones, diario y comandos.
 
-## 7.3 Monte Carlo (Fase 11)
+## 7.4 Monte Carlo (Fase 11)
 
 Decisiones en [ADR-014](decisions/ADR-014-monte-carlo.md); guía en [MONTE_CARLO.md](MONTE_CARLO.md).
 
@@ -163,7 +173,7 @@ Decisiones en [ADR-014](decisions/ADR-014-monte-carlo.md); guía en [MONTE_CARLO
   robustez por costos y operaciones perdidas, distribuciones, ruina y probabilidad del kill switch. Determinista.
 * `MonteCarloService` (Application) y `POST /api/backtests/{id}/monte-carlo`. Solo lectura; no se persiste.
 
-## 7.4 Risk Engine (Fase 10)
+## 7.5 Risk Engine (Fase 10)
 
 Decisiones en [ADR-013](decisions/ADR-013-risk-engine.md); modelo en [RISK_MODEL.md](RISK_MODEL.md).
 
@@ -173,7 +183,7 @@ Decisiones en [ADR-013](decisions/ADR-013-risk-engine.md); modelo en [RISK_MODEL
 * Política en la sección `Risk` de la configuración de la API (validada al arrancar), `GET /api/risk/limits` y
   cambios por ejecución en `POST /api/backtests`.
 
-## 7.5 Valor esperado (Fase 9)
+## 7.6 Valor esperado (Fase 9)
 
 Decisiones en [ADR-012](decisions/ADR-012-expected-value.md).
 
@@ -184,7 +194,7 @@ Decisiones en [ADR-012](decisions/ADR-012-expected-value.md).
 * `BacktestService` acepta `model-ev` + `modelId`, usa las barreras y el horizonte del modelo, cuenta las evaluaciones
   por modelo y advierte del solapamiento con el periodo de entrenamiento.
 
-## 7.6 Calibración (Fase 8)
+## 7.7 Calibración (Fase 8)
 
 Decisiones en [ADR-011](decisions/ADR-011-probability-calibration.md).
 
@@ -193,7 +203,7 @@ Decisiones en [ADR-011](decisions/ADR-011-probability-calibration.md).
 * `ProbabilityCalibrator` (`Omega.Strategy.Calibration`) aplica el calibrador en C#, con paridad verificada contra
   Python. Salida siempre en [0.001, 0.999].
 
-## 7.7 Machine learning (Fase 7)
+## 7.8 Machine learning (Fase 7)
 
 Decisiones en [ADR-004](decisions/ADR-004-ml-python-onnx.md); guía en [MACHINE_LEARNING.md](MACHINE_LEARNING.md).
 
@@ -205,7 +215,7 @@ Decisiones en [ADR-004](decisions/ADR-004-ml-python-onnx.md); guía en [MACHINE_
   exportación ONNX con paridad exacta.
 * La inferencia ONNX en C# llegará cuando un modelo participe en decisiones (Fases 9 y 12).
 
-## 7.8 Estrategia base y evaluación (Fase 6)
+## 7.9 Estrategia base y evaluación (Fase 6)
 
 Decisiones en [ADR-010](decisions/ADR-010-baseline-and-evaluation.md); protocolo en [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md).
 
@@ -216,7 +226,7 @@ Decisiones en [ADR-010](decisions/ADR-010-baseline-and-evaluation.md); protocolo
 * API: `POST /api/backtests`, `GET /api/backtests`, `GET /api/backtests/{id}`, `GET /api/strategies`. Solo lee
   velas y escribe el registro del experimento; no toca el exchange.
 
-## 7.9 Backtesting (Fase 5)
+## 7.10 Backtesting (Fase 5)
 
 Reglas en [BACKTESTING.md](BACKTESTING.md); decisiones en [ADR-005](decisions/ADR-005-backtesting.md).
 
@@ -226,7 +236,7 @@ Reglas en [BACKTESTING.md](BACKTESTING.md); decisiones en [ADR-005](decisions/AD
 * El modelo de fills se extraerá detrás de `IExecutionProvider` en la Fase 12.
 * Carga histórica opcional al arrancar el Worker (`MarketData:Backfill:HistoryStart`).
 
-## 7.10 Features (Fase 4)
+## 7.11 Features (Fase 4)
 
 Detalle en [ADR-009](decisions/ADR-009-feature-engine.md) y catálogo en [FEATURES.md](FEATURES.md).
 
@@ -237,7 +247,7 @@ Detalle en [ADR-009](decisions/ADR-009-feature-engine.md) y catálogo en [FEATUR
 * `ComputeSeries` produce un vector por vela para backtests y datasets (un hueco reinicia el calentamiento).
 * Los features no se persisten: se recalculan desde las velas.
 
-## 7.11 Estado de mercado y relleno de huecos (Fase 3)
+## 7.12 Estado de mercado y relleno de huecos (Fase 3)
 
 Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfill.md).
 
@@ -248,7 +258,7 @@ Detalle y justificación en [ADR-008](decisions/ADR-008-market-state-and-backfil
 * `CLOCK_SKEW_DETECTED` cuando el reloj local va atrasado respecto al exchange.
 * Agregación de velas: no implementada (no requerida todavía).
 
-## 7.12 Persistencia (Fase 2)
+## 7.13 Persistencia (Fase 2)
 
 Detalle y justificación en [ADR-002](decisions/ADR-002-postgresql.md).
 

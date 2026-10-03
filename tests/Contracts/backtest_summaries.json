@@ -1,0 +1,16 @@
+[
+  {
+    "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "createdAtUtc": "2026-09-15T12:00:00+00:00",
+    "periodLabel": "holdout",
+    "strategyName": "baseline-ema-trend",
+    "strategyVersion": "1",
+    "symbol": "BTCUSDT",
+    "interval": "FiveMinutes",
+    "tradingStartUtc": "2026-09-08T12:00:00+00:00",
+    "tradingEndUtc": "2026-09-15T12:00:00+00:00",
+    "datasetSha256": "abc123",
+    "tradeCount": 22,
+    "totalReturn": 0.0135
+  }
+]

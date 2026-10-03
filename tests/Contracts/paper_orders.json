@@ -1,0 +1,248 @@
+[
+  {
+    "order": {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "clientOrderId": "omega-paper-00000001",
+      "side": "Buy",
+      "type": "Market",
+      "quantity": 0.15,
+      "stopPrice": null,
+      "limitPrice": null,
+      "parentOrderId": null,
+      "ocoGroup": null,
+      "status": "Filled",
+      "filledQuantity": 0.15,
+      "averageFillPrice": 64016,
+      "fee": 9.6024,
+      "reason": null,
+      "createdAtUtc": "2026-09-15T12:00:00+00:00",
+      "updatedAtUtc": "2026-09-15T12:00:00+00:00",
+      "isTerminal": true,
+      "isWorking": false,
+      "events": [
+        {
+          "orderId": "00000000-0000-0000-0000-000000000001",
+          "sequence": 0,
+          "status": "Created",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000001",
+          "sequence": 1,
+          "status": "Submitted",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000001",
+          "sequence": 2,
+          "status": "Acknowledged",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000001",
+          "sequence": 3,
+          "status": "Filled",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": "0.15 @ 64016"
+        }
+      ]
+    },
+    "events": [
+      {
+        "orderId": "00000000-0000-0000-0000-000000000001",
+        "sequence": 0,
+        "status": "Created",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000001",
+        "sequence": 1,
+        "status": "Submitted",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000001",
+        "sequence": 2,
+        "status": "Acknowledged",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000001",
+        "sequence": 3,
+        "status": "Filled",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": "0.15 @ 64016"
+      }
+    ]
+  },
+  {
+    "order": {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "clientOrderId": "omega-paper-00000002",
+      "side": "Sell",
+      "type": "StopMarket",
+      "quantity": 0.15,
+      "stopPrice": 63500,
+      "limitPrice": null,
+      "parentOrderId": "00000000-0000-0000-0000-000000000001",
+      "ocoGroup": "00000000-0000-0000-0000-00000000000a",
+      "status": "Canceled",
+      "filledQuantity": 0,
+      "averageFillPrice": null,
+      "fee": 0,
+      "reason": "One-cancels-the-other: sibling filled.",
+      "createdAtUtc": "2026-09-15T12:00:00+00:00",
+      "updatedAtUtc": "2026-09-15T13:00:00+00:00",
+      "isTerminal": true,
+      "isWorking": false,
+      "events": [
+        {
+          "orderId": "00000000-0000-0000-0000-000000000002",
+          "sequence": 0,
+          "status": "Created",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000002",
+          "sequence": 1,
+          "status": "Submitted",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000002",
+          "sequence": 2,
+          "status": "Acknowledged",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000002",
+          "sequence": 3,
+          "status": "Canceled",
+          "timeUtc": "2026-09-15T13:00:00+00:00",
+          "detail": "One-cancels-the-other: sibling filled."
+        }
+      ]
+    },
+    "events": [
+      {
+        "orderId": "00000000-0000-0000-0000-000000000002",
+        "sequence": 0,
+        "status": "Created",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000002",
+        "sequence": 1,
+        "status": "Submitted",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000002",
+        "sequence": 2,
+        "status": "Acknowledged",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000002",
+        "sequence": 3,
+        "status": "Canceled",
+        "timeUtc": "2026-09-15T13:00:00+00:00",
+        "detail": "One-cancels-the-other: sibling filled."
+      }
+    ]
+  },
+  {
+    "order": {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "clientOrderId": "omega-paper-00000003",
+      "side": "Sell",
+      "type": "Limit",
+      "quantity": 0.15,
+      "stopPrice": null,
+      "limitPrice": 64800,
+      "parentOrderId": "00000000-0000-0000-0000-000000000001",
+      "ocoGroup": "00000000-0000-0000-0000-00000000000a",
+      "status": "Filled",
+      "filledQuantity": 0.15,
+      "averageFillPrice": 64800,
+      "fee": 9.72,
+      "reason": null,
+      "createdAtUtc": "2026-09-15T12:00:00+00:00",
+      "updatedAtUtc": "2026-09-15T13:00:00+00:00",
+      "isTerminal": true,
+      "isWorking": false,
+      "events": [
+        {
+          "orderId": "00000000-0000-0000-0000-000000000003",
+          "sequence": 0,
+          "status": "Created",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000003",
+          "sequence": 1,
+          "status": "Submitted",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000003",
+          "sequence": 2,
+          "status": "Acknowledged",
+          "timeUtc": "2026-09-15T12:00:00+00:00",
+          "detail": null
+        },
+        {
+          "orderId": "00000000-0000-0000-0000-000000000003",
+          "sequence": 3,
+          "status": "Filled",
+          "timeUtc": "2026-09-15T13:00:00+00:00",
+          "detail": "0.15 @ 64800"
+        }
+      ]
+    },
+    "events": [
+      {
+        "orderId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 0,
+        "status": "Created",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 1,
+        "status": "Submitted",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 2,
+        "status": "Acknowledged",
+        "timeUtc": "2026-09-15T12:00:00+00:00",
+        "detail": null
+      },
+      {
+        "orderId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 3,
+        "status": "Filled",
+        "timeUtc": "2026-09-15T13:00:00+00:00",
+        "detail": "0.15 @ 64800"
+      }
+    ]
+  }
+]

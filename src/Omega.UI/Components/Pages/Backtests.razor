@@ -1,0 +1,46 @@
+@page "/backtests"
+@inject OmegaApiClient Api
+
+<PageTitle>OMEGA Quant — Backtests</PageTitle>
+<h1 class="page-title">Backtests</h1>
+<p class="muted">Los backtests se ejecutan con <code>POST /api/backtests</code> (ver docs/EVALUATION_PROTOCOL.md). Esta vista solo los consulta.</p>
+
+@if (_runs is { IsOk: true } r)
+{
+    if (r.Value!.Count == 0)
+    {
+        <p class="empty">No hay backtests registrados.</p>
+    }
+    else
+    {
+        <div class="scroll">
+            <table class="data">
+                <thead><tr><th>Ejecutado (UTC)</th><th>Estrategia</th><th>Periodo</th><th>Desde</th><th>Hasta</th><th class="num">Operaciones</th><th class="num">Retorno</th></tr></thead>
+                <tbody>
+                    @foreach (var run in r.Value)
+                    {
+                        <tr>
+                            <td><a href="/backtests/@run.Id">@Display.Utc(run.CreatedAtUtc)</a></td>
+                            <td>@run.StrategyName</td>
+                            <td><span class="tag @(run.PeriodLabel.Contains("holdout") ? "tag-warn" : "")">@run.PeriodLabel</span></td>
+                            <td>@Display.Utc(run.TradingStartUtc)</td>
+                            <td>@Display.Utc(run.TradingEndUtc)</td>
+                            <td class="num">@run.TradeCount</td>
+                            <td class="num @(run.TotalReturn >= 0 ? "pos" : "neg")">@Display.Percent(run.TotalReturn, 2, true)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <ApiProblem Status="@(_runs?.Status ?? ApiStatus.Unavailable)" Problem="@_runs?.Problem" />
+}
+
+@code {
+    private ApiResult<IReadOnlyList<BacktestRunSummaryDto>>? _runs;
+
+    protected override async Task OnInitializedAsync() => _runs = await Api.BacktestsAsync(100, CancellationToken.None);
+}

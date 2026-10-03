@@ -1,0 +1,22 @@
+@* A labelled value. A missing value is an em dash, never a zero. *@
+<div class="metric @StateClass">
+    <span class="label">@Label</span>
+    <span class="value">@(string.IsNullOrEmpty(Value) ? Display.Missing : Value)</span>
+    @if (!string.IsNullOrWhiteSpace(Hint))
+    {
+        <span class="hint">@Hint</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>ok, warn, down or empty.</summary>
+    [Parameter] public string? Tone { get; set; }
+
+    private string StateClass => string.IsNullOrEmpty(Tone) ? string.Empty : "tone-" + Tone;
+}

@@ -1,0 +1,15 @@
+@* Shown instead of data when the API could not provide it: never stale numbers presented as current. *@
+<p class="api-problem" role="status">
+    @(Status switch
+    {
+        ApiStatus.NotFound => "No encontrado.",
+        ApiStatus.Rejected => "Petición rechazada: " + Problem,
+        _ => "No disponible: " + (Problem ?? "La API no respondió."),
+    })
+</p>
+
+@code {
+    [Parameter] public ApiStatus Status { get; set; } = ApiStatus.Unavailable;
+
+    [Parameter] public string? Problem { get; set; }
+}

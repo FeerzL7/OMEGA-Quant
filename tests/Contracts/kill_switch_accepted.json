@@ -1,0 +1,6 @@
+{
+  "commandId": 8,
+  "session": "paper-1",
+  "action": "reset",
+  "note": "Queued: the paper worker applies it within its poll interval."
+}
